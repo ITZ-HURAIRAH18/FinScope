@@ -1,1 +1,1 @@
-"# FinScope-Real-Time-Crypto-Stock-Analytics-Dashboard" 
+"FinScope-Real-Time-Crypto-Stock-Analytics-Dashboard" 
