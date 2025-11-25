@@ -1,23 +1,25 @@
-
 "use client";
 
-import React from 'react';
-import { useAppSelector } from '@/store/hooks';
-import { formatCurrency, formatPercentage, getPriceChangeColor } from '@/lib/utils';
-import { useRouter } from 'next/navigation';
+import React from "react";
+import { useAppSelector } from "@/store/hooks";
+import {
+  formatCurrency,
+  formatPercentage,
+  getPriceChangeColor,
+} from "@/lib/utils";
+import { useRouter } from "next/navigation";
 
 interface MarketTableProps {
-  type: 'crypto' | 'stocks';
+  type: "crypto" | "stocks";
 }
 
 function MarketTable({ type }: MarketTableProps) {
   const router = useRouter();
-  const { cryptoPrices, stockPrices, searchQuery, sortField, sortOrder } = useAppSelector(
-    (state) => state.market
-  );
+  const { cryptoPrices, stockPrices, searchQuery, sortField, sortOrder } =
+    useAppSelector((state) => state.market);
 
   // Get the appropriate data based on type
-  const data = type === 'crypto' ? cryptoPrices : stockPrices;
+  const data = type === "crypto" ? cryptoPrices : stockPrices;
 
   // Convert to array and filter
   const items = Object.values(data).filter((item: any) => {
@@ -31,27 +33,29 @@ function MarketTable({ type }: MarketTableProps) {
     let aVal, bVal;
 
     switch (sortField) {
-      case 'name':
+      case "name":
         aVal = a.symbol;
         bVal = b.symbol;
         break;
-      case 'price':
+      case "price":
         aVal = a.price;
         bVal = b.price;
         break;
-      case 'change':
-        aVal = type === 'crypto' ? a.priceChangePercent24h : a.priceChangePercent;
-        bVal = type === 'crypto' ? b.priceChangePercent24h : b.priceChangePercent;
+      case "change":
+        aVal =
+          type === "crypto" ? a.priceChangePercent24h : a.priceChangePercent;
+        bVal =
+          type === "crypto" ? b.priceChangePercent24h : b.priceChangePercent;
         break;
-      case 'volume':
-        aVal = type === 'crypto' ? a.volume24h : a.volume;
-        bVal = type === 'crypto' ? b.volume24h : b.volume;
+      case "volume":
+        aVal = type === "crypto" ? a.volume24h : a.volume;
+        bVal = type === "crypto" ? b.volume24h : b.volume;
         break;
       default:
         return 0;
     }
 
-    if (sortOrder === 'asc') {
+    if (sortOrder === "asc") {
       return aVal > bVal ? 1 : -1;
     } else {
       return aVal < bVal ? 1 : -1;
@@ -59,7 +63,7 @@ function MarketTable({ type }: MarketTableProps) {
   });
 
   const handleRowClick = (symbol: string) => {
-    if (type === 'crypto') {
+    if (type === "crypto") {
       router.push(`/crypto/${symbol.toLowerCase()}`);
     } else {
       router.push(`/stocks/${symbol}`);
@@ -70,7 +74,7 @@ function MarketTable({ type }: MarketTableProps) {
     return (
       <div className="glass-card p-8 rounded-2xl text-center">
         <div className="text-gray-400">
-          {searchQuery ? 'No results found' : 'Waiting for market data...'}
+          {searchQuery ? "No results found" : "Waiting for market data..."}
         </div>
       </div>
     );
@@ -82,24 +86,42 @@ function MarketTable({ type }: MarketTableProps) {
         <table className="w-full">
           <thead>
             <tr className="border-b border-white/10">
-              <th className="text-left px-6 py-4 text-gray-400 font-semibold">Symbol</th>
-              <th className="text-right px-6 py-4 text-gray-400 font-semibold">Price</th>
-              <th className="text-right px-6 py-4 text-gray-400 font-semibold">24h Change</th>
-              <th className="text-right px-6 py-4 text-gray-400 font-semibold">24h %</th>
-              {type === 'crypto' && (
+              <th className="text-left px-6 py-4 text-gray-400 font-semibold">
+                Symbol
+              </th>
+              <th className="text-right px-6 py-4 text-gray-400 font-semibold">
+                Price
+              </th>
+              <th className="text-right px-6 py-4 text-gray-400 font-semibold">
+                24h Change
+              </th>
+              <th className="text-right px-6 py-4 text-gray-400 font-semibold">
+                24h %
+              </th>
+              {type === "crypto" && (
                 <>
-                  <th className="text-right px-6 py-4 text-gray-400 font-semibold">24h High</th>
-                  <th className="text-right px-6 py-4 text-gray-400 font-semibold">24h Low</th>
+                  <th className="text-right px-6 py-4 text-gray-400 font-semibold">
+                    24h High
+                  </th>
+                  <th className="text-right px-6 py-4 text-gray-400 font-semibold">
+                    24h Low
+                  </th>
                 </>
               )}
-              <th className="text-right px-6 py-4 text-gray-400 font-semibold">Volume</th>
+              <th className="text-right px-6 py-4 text-gray-400 font-semibold">
+                Volume
+              </th>
             </tr>
           </thead>
           <tbody>
             {sortedItems.map((item: any) => {
-              const changePercent = type === 'crypto' ? item.priceChangePercent24h : item.priceChangePercent;
-              const priceChange = type === 'crypto' ? item.priceChange24h : item.priceChange;
-              const volume = type === 'crypto' ? item.volume24h : item.volume;
+              const changePercent =
+                type === "crypto"
+                  ? item.priceChangePercent24h
+                  : item.priceChangePercent;
+              const priceChange =
+                type === "crypto" ? item.priceChange24h : item.priceChange;
+              const volume = type === "crypto" ? item.volume24h : item.volume;
 
               return (
                 <tr
@@ -109,17 +131,20 @@ function MarketTable({ type }: MarketTableProps) {
                 >
                   <td className="px-6 py-4">
                     <div className="flex items-center">
-                      <img 
-                        src={type === 'crypto' 
-                          ? `https://assets.coincap.io/assets/icons/${item.symbol.toLowerCase()}@2x.png`
-                          : `https://financialmodelingprep.com/image-stock/${item.symbol}.png`
+                      <img
+                        src={
+                          type === "crypto"
+                            ? `https://assets.coincap.io/assets/icons/${item.symbol.toLowerCase()}@2x.png`
+                            : `https://financialmodelingprep.com/image-stock/${item.symbol}.png`
                         }
                         alt={item.symbol}
                         className="w-8 h-8 rounded-full mr-3"
                         onError={(e) => {
                           // Fallback to gradient if image fails to load
-                          e.currentTarget.style.display = 'none';
-                          e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                          e.currentTarget.style.display = "none";
+                          e.currentTarget.nextElementSibling?.classList.remove(
+                            "hidden"
+                          );
                         }}
                       />
                       <div className="hidden w-8 h-8 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center mr-3 group-hover:shadow-lg group-hover:shadow-blue-500/50 transition">
@@ -128,36 +153,55 @@ function MarketTable({ type }: MarketTableProps) {
                         </span>
                       </div>
                       <div>
-                        <div className="text-white font-semibold">{item.symbol}</div>
+                        <div className="text-white font-semibold">
+                          {item.symbol}
+                        </div>
                       </div>
                     </div>
                   </td>
                   <td className="px-6 py-4 text-right">
-                    <div className="text-white font-mono">{formatCurrency(item.price)}</div>
-                  </td>
-                  <td className="px-6 py-4 text-right">
-                    <div className={`font-mono ${getPriceChangeColor(priceChange)}`}>
-                      {priceChange >= 0 ? '+' : ''}{formatCurrency(priceChange)}
+                    <div className="text-white font-mono">
+                      {formatCurrency(item.price)}
                     </div>
                   </td>
                   <td className="px-6 py-4 text-right">
-                    <div className={`font-mono font-semibold ${getPriceChangeColor(changePercent)}`}>
+                    <div
+                      className={`font-mono ${getPriceChangeColor(
+                        priceChange
+                      )}`}
+                    >
+                      {priceChange >= 0 ? "+" : ""}
+                      {formatCurrency(priceChange)}
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 text-right">
+                    <div
+                      className={`font-mono font-semibold ${getPriceChangeColor(
+                        changePercent
+                      )}`}
+                    >
                       {formatPercentage(changePercent)}
                     </div>
                   </td>
-                  {type === 'crypto' && (
+                  {type === "crypto" && (
                     <>
                       <td className="px-6 py-4 text-right">
-                        <div className="text-gray-300 font-mono">{formatCurrency(item.high24h)}</div>
+                        <div className="text-gray-300 font-mono">
+                          {formatCurrency(item.high24h)}
+                        </div>
                       </td>
                       <td className="px-6 py-4 text-right">
-                        <div className="text-gray-300 font-mono">{formatCurrency(item.low24h)}</div>
+                        <div className="text-gray-300 font-mono">
+                          {formatCurrency(item.low24h)}
+                        </div>
                       </td>
                     </>
                   )}
                   <td className="px-6 py-4 text-right">
                     <div className="text-gray-300 font-mono">
-                      {volume.toLocaleString('en-US', { maximumFractionDigits: 0 })}
+                      {volume.toLocaleString("en-US", {
+                        maximumFractionDigits: 0,
+                      })}
                     </div>
                   </td>
                 </tr>
@@ -169,8 +213,9 @@ function MarketTable({ type }: MarketTableProps) {
 
       {sortedItems.length > 0 && (
         <div className="px-6 py-4 border-t border-white/10 text-sm text-gray-400 text-center">
-          Showing {sortedItems.length} {type === 'crypto' ? 'cryptocurrencies' : 'stocks'} · 
-          Live updates via WebSocket
+          Showing {sortedItems.length}{" "}
+          {type === "crypto" ? "cryptocurrencies" : "stocks"} · Live updates via
+          WebSocket
         </div>
       )}
     </div>

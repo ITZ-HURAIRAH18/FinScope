@@ -7,7 +7,7 @@ interface CryptoChartProps {
   symbol: string;
 }
 
-type Timeframe = '15m' | '1h' | '1d';
+type Timeframe = '1s' | '1m' | '5m' | '15m' | '1h' | '1d';
 
 export default function CryptoChart({ symbol }: CryptoChartProps) {
   const chartContainerRef = useRef<HTMLDivElement>(null);
@@ -59,7 +59,7 @@ export default function CryptoChart({ symbol }: CryptoChartProps) {
         // Binance API expects uppercase symbol and 'USDT' suffix for most pairs
         const pair = `${symbol.toUpperCase()}USDT`;
         const response = await fetch(
-          `https://api.binance.com/api/v3/klines?symbol=${pair}&interval=${timeframe}&limit=100`
+          `https://api.binance.com/api/v3/klines?symbol=${pair}&interval=${timeframe}&limit=300`
         );
 
         if (!response.ok) {
@@ -102,7 +102,7 @@ export default function CryptoChart({ symbol }: CryptoChartProps) {
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-2xl font-bold text-white">Price Chart</h2>
         <div className="flex space-x-2 bg-white/5 rounded-lg p-1">
-          {(['15m', '1h', '1d'] as Timeframe[]).map((tf) => (
+          {(['1s', '1m', '5m', '15m', '1h', '1d'] as Timeframe[]).map((tf) => (
             <button
               key={tf}
               onClick={() => setTimeframe(tf)}
