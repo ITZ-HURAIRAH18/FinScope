@@ -40,6 +40,9 @@ export default function StockChart({ symbol }: StockChartProps) {
         timeVisible: true,
         secondsVisible: false,
       },
+      watermark: {
+        visible: false,
+      },
     });
 
     chartRef.current = chart;
@@ -68,8 +71,7 @@ export default function StockChart({ symbol }: StockChartProps) {
         
         const interval = intervalMap[timeframe];
         
-        // Calculate date range for ~200 candles
-        // Use a multiplier to account for non-trading hours, weekends, and holidays
+        // Calculate date range for exactly 200 candles
         const now = Math.floor(Date.now() / 1000);
         const secondsPerCandle =
           interval === '1m' ? 60
@@ -79,15 +81,15 @@ export default function StockChart({ symbol }: StockChartProps) {
           : interval === '1d' ? 86400
           : 60;
         
-        // Request extra time to account for market closures (weekends, holidays, after-hours)
-        // Grouped by interval type: short (1s/1m/5m), medium (15m), long (1h/1d)
+        // Request more time to ensure we get 200 candles (accounting for market closures)
+        // Markets are closed on weekends and after-hours, so we need to request extra time
         const multiplier = 
-          interval === '1m' ? 5    // Short intervals: 5x multiplier
-          : interval === '5m' ? 5  // Short intervals: 5x multiplier
-          : interval === '15m' ? 4 // Medium interval: 4x multiplier
-          : interval === '1h' ? 1.2  // Long intervals: 1.2x multiplier
-          : interval === '1d' ? 1.2  // Long intervals: 1.2x multiplier
-          : 1;
+          interval === '1m' ? 10    // 1 minute: 10x to account for after-hours/weekends
+          : interval === '5m' ? 10  // 5 minutes: 10x
+          : interval === '15m' ? 8  // 15 minutes: 8x
+          : interval === '1h' ? 5   // 1 hour: 5x
+          : interval === '1d' ? 2   // 1 day: 2x (fewer gaps)
+          : 10;
         
         const period1 = now - (secondsPerCandle * 200 * multiplier);
         const period2 = now;
@@ -126,7 +128,11 @@ export default function StockChart({ symbol }: StockChartProps) {
           candle.open > 0 && candle.high > 0 && candle.low > 0 && candle.close > 0
         );
         
-        newSeries.setData(candleData);
+       // Always force exactly 200 candles
+const fixedCandles = candleData.slice(-200);
+
+newSeries.setData(fixedCandles);
+
       } catch (err: any) {
         console.error('Error fetching stock chart data:', err);
         setError(`Failed to load chart data: ${err.message}`);

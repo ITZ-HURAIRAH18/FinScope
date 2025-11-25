@@ -40,6 +40,9 @@ export default function CryptoChart({ symbol }: CryptoChartProps) {
         timeVisible: true,
         secondsVisible: false,
       },
+      watermark: {
+        visible: false,
+      },
     });
 
     chartRef.current = chart;
