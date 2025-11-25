@@ -20,7 +20,7 @@ export default function StockDetailPage() {
   // Show page immediately, don't wait for Redux data
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-gray-900 via-blue-900 to-gray-900">
+    <main className="min-h-screen bg-gradient-to-br from-black via-gray-900 to-black">
       {/* Header */}
       <header className="border-b border-white/10 backdrop-blur-sm bg-black/20 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
@@ -53,7 +53,7 @@ export default function StockDetailPage() {
         </button>
 
         {/* Header Section */}
-        <div className="glass-card p-8 rounded-2xl mb-8">
+        <div className="glass-card p-8 rounded-2xl mb-8 border border-white">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
             <div className="flex items-center space-x-4">
               <img 
@@ -93,7 +93,7 @@ export default function StockDetailPage() {
 
         {/* Stats Grid */}
         <div className="grid md:grid-cols-2 gap-6 mb-8">
-          <div className="glass-card p-6 rounded-2xl">
+          <div className="glass-card p-6 rounded-2xl border border-white">
             <div className="text-gray-400 mb-2">Current Price</div>
             <div className="text-2xl font-bold text-white font-mono">
               {formatCurrency(priceData.price)}
@@ -109,7 +109,7 @@ export default function StockDetailPage() {
         </div>
 
         {/* Additional Info */}
-        <div className="glass-card p-8 rounded-2xl mb-8">
+        <div className="glass-card p-8 rounded-2xl mb-8 border border-white">
           <h2 className="text-2xl font-bold text-white mb-6">Market Information</h2>
           
           <div className="grid md:grid-cols-2 gap-6">

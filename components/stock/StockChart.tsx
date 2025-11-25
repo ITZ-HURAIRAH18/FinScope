@@ -27,7 +27,7 @@ export default function StockChart({ symbol }: StockChartProps) {
 
     const chart = createChart(chartContainerRef.current, {
       layout: {
-        background: { type: ColorType.Solid, color: 'transparent' },
+        background: { type: ColorType.Solid, color: '#000000' },
         textColor: '#9CA3AF',
       },
       grid: {
@@ -151,7 +151,7 @@ newSeries.setData(fixedCandles);
   }, [symbol, timeframe]);
 
   return (
-    <div className="glass-card p-6 rounded-2xl mb-8">
+    <div className="glass-card p-6 rounded-2xl mb-8 border border-white">
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-2xl font-bold text-white">Price Chart</h2>
         <div className="flex space-x-2 bg-white/5 rounded-lg p-1">
@@ -171,7 +171,7 @@ newSeries.setData(fixedCandles);
       <div className="relative h-[400px] w-full">
         {isLoading && (
           <div className="absolute inset-0 flex items-center justify-center bg-black/50 z-10 backdrop-blur-sm rounded-lg">
-            <div className="text-blue-400 animate-pulse">Loading chart data...</div>
+            <div className="text-white animate-pulse">Loading chart data...</div>
           </div>
         )}
         {error && (
