@@ -55,26 +55,24 @@ export const authOptions: NextAuthOptions = {
     strategy: 'jwt',
   },
   callbacks: {
-    async jwt({ token, user, trigger, session }) {
-      // Initial sign in
+    async jwt({ token, user, trigger }) {
+      // Initial sign in - only store essential data (no image to keep token small)
       if (user) {
         token.id = user.id;
         token.email = user.email;
         token.name = user.name;
-        token.image = user.image;
       }
 
       // Handle session update trigger (when profile is updated)
-      if (trigger === "update" && session) {
+      if (trigger === "update") {
         // Fetch fresh user data from database
         const updatedUser = await prisma.user.findUnique({
           where: { email: token.email as string },
-          select: { id: true, email: true, name: true, image: true },
+          select: { id: true, email: true, name: true },
         });
 
         if (updatedUser) {
           token.name = updatedUser.name;
-          token.image = updatedUser.image;
         }
       }
 
@@ -82,10 +80,32 @@ export const authOptions: NextAuthOptions = {
     },
     async session({ session, token }) {
       if (token && session.user) {
-        session.user.id = token.id as string;
-        session.user.email = token.email as string;
-        session.user.name = token.name as string;
-        session.user.image = token.image as string;
+        try {
+          // Fetch user data including image from database
+          // This avoids storing large base64 images in the JWT token
+          const user = await prisma.user.findUnique({
+            where: { email: token.email as string },
+            select: { id: true, email: true, name: true, image: true },
+          });
+
+          if (user) {
+            session.user.id = user.id;
+            session.user.email = user.email;
+            session.user.name = user.name;
+            session.user.image = user.image;
+          } else {
+            // Fallback to token data if user not found
+            session.user.id = token.id as string;
+            session.user.email = token.email as string;
+            session.user.name = token.name as string;
+          }
+        } catch (error) {
+          // If database is unavailable, use token data as fallback
+          console.error('Database error in session callback:', error);
+          session.user.id = token.id as string;
+          session.user.email = token.email as string;
+          session.user.name = token.name as string;
+        }
       }
       return session;
     },
