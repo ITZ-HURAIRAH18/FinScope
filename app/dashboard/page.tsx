@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
@@ -17,7 +17,7 @@ import MarketTable from "@/components/markets/MarketTable";
 import AuthButton from "@/components/auth/AuthButton";
 import LoadingScreen from "@/components/LoadingScreen";
 
-export default function DashboardPage() {
+function DashboardContent() {
   const dispatch = useAppDispatch();
   const searchParams = useSearchParams();
   const { activeMarket, searchQuery } = useAppSelector((state) => state.market);
@@ -194,5 +194,13 @@ export default function DashboardPage() {
         </div>
       </div>
     </main>
+  );
+}
+
+export default function DashboardPage() {
+  return (
+    <Suspense fallback={<LoadingScreen />}>
+      <DashboardContent />
+    </Suspense>
   );
 }
