@@ -9,6 +9,7 @@ import WatchlistButton from '@/components/watchlist/WatchlistButton';
 import AuthButton from '@/components/auth/AuthButton';
 import StockChart from '@/components/stock/StockChart';
 import LoadingScreen from '@/components/LoadingScreen';
+import TradingPanel from '@/components/trading/TradingPanel';
 
 export default function StockDetailPage() {
   const params = useParams();
@@ -91,6 +92,11 @@ export default function StockDetailPage() {
 
         {/* Chart Section */}
         <StockChart symbol={symbol} />
+
+        {/* Trading Section */}
+        {priceData && (
+          <TradingPanel symbol={symbol} type="STOCK" currentPrice={priceData.price} />
+        )}
 
         {/* Stats Grid */}
         <div className="grid md:grid-cols-2 gap-6 mb-8">

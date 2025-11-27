@@ -9,6 +9,7 @@ import WatchlistButton from '@/components/watchlist/WatchlistButton';
 import AuthButton from '@/components/auth/AuthButton';
 import CryptoChart from '@/components/crypto/CryptoChart';
 import LoadingScreen from '@/components/LoadingScreen';
+import TradingPanel from '@/components/trading/TradingPanel';
 
 export default function CryptoDetailPage() {
   const params = useParams();
@@ -92,6 +93,9 @@ export default function CryptoDetailPage() {
         
         {/* Chart Section */}
         <CryptoChart symbol={symbol} />
+
+        {/* Trading Section */}
+        <TradingPanel symbol={symbol} type="CRYPTO" currentPrice={priceData.price} />
 
         {/* Stats Grid */}
         <div className="grid md:grid-cols-3 gap-6 mb-8">

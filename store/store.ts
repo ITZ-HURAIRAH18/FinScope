@@ -1,11 +1,13 @@
 import { configureStore } from '@reduxjs/toolkit';
-import themeReducer from './slices/themeSlice';
 import marketReducer from './slices/marketSlice';
+import themeReducer from './slices/themeSlice';
+import portfolioReducer from './slices/portfolioSlice';
 
 export const store = configureStore({
   reducer: {
-    theme: themeReducer,
     market: marketReducer,
+    theme: themeReducer,
+    portfolio: portfolioReducer,
   },
 });
 

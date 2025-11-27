@@ -12,17 +12,20 @@ datasource db {
 }
 
 model User {
-  id            String    @id @default(cuid())
+  id            String        @id @default(cuid())
   name          String?
-  email         String    @unique
+  email         String        @unique
   emailVerified DateTime?
   image         String?
   password      String?
+  balance       Float         @default(100000.00)
   accounts      Account[]
   sessions      Session[]
   watchlist     Watchlist[]
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  portfolio     Portfolio[]
+  transactions  Transaction[]
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
 }
 
 model Account {
@@ -70,4 +73,31 @@ model VerificationToken {
   expires    DateTime
 
   @@unique([identifier, token])
+}
+
+model Portfolio {
+  id              String   @id @default(cuid())
+  userId          String
+  symbol          String
+  type            String   // "CRYPTO" or "STOCK"
+  quantity        Float
+  averageBuyPrice Float
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@unique([userId, symbol, type])
+}
+
+model Transaction {
+  id        String   @id @default(cuid())
+  userId    String
+  symbol    String
+  type      String   // "CRYPTO" or "STOCK"
+  action    String   // "BUY" or "SELL"
+  quantity  Float
+  price     Float
+  total     Float
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
 }
