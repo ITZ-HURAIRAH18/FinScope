@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import { useAppSelector } from "@/store/hooks";
 import {
   formatCurrency,
@@ -11,6 +11,52 @@ import { useRouter } from "next/navigation";
 
 interface MarketTableProps {
   type: "crypto" | "stocks";
+}
+
+// Component to handle crypto icon with fallback sources
+function CryptoIcon({ symbol }: { symbol: string }) {
+  const [iconError, setIconError] = useState<number>(0);
+  
+  const iconSources = [
+    `https://assets.coincap.io/assets/icons/${symbol.toLowerCase()}@2x.png`,
+    `https://cryptologos.cc/logos/${symbol.toLowerCase()}-${symbol.toLowerCase()}-logo.png`,
+    `https://s2.coinmarketcap.com/static/img/coins/64x64/${symbol.toLowerCase()}.png`,
+  ];
+
+  const handleImageError = () => {
+    if (iconError < iconSources.length - 1) {
+      setIconError(iconError + 1);
+    } else {
+      // All sources failed, show gradient fallback
+      const imgElement = document.getElementById(`crypto-icon-${symbol}`) as HTMLImageElement;
+      const fallbackElement = document.getElementById(`crypto-fallback-${symbol}`);
+      if (imgElement && fallbackElement) {
+        imgElement.style.display = "none";
+        fallbackElement.classList.remove("hidden");
+        fallbackElement.classList.add("flex");
+      }
+    }
+  };
+
+  return (
+    <>
+      <img
+        id={`crypto-icon-${symbol}`}
+        src={iconSources[iconError]}
+        alt={symbol}
+        className="w-8 h-8 rounded-full mr-3"
+        onError={handleImageError}
+      />
+      <div
+        id={`crypto-fallback-${symbol}`}
+        className="hidden w-8 h-8 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 items-center justify-center mr-3"
+      >
+        <span className="text-white font-bold text-sm">
+          {symbol.substring(0, 1)}
+        </span>
+      </div>
+    </>
+  );
 }
 
 function MarketTable({ type }: MarketTableProps) {
@@ -131,27 +177,31 @@ function MarketTable({ type }: MarketTableProps) {
                 >
                   <td className="px-6 py-4">
                     <div className="flex items-center">
-                      <img
-                        src={
-                          type === "crypto"
-                            ? `https://assets.coincap.io/assets/icons/${item.symbol.toLowerCase()}@2x.png`
-                            : `https://financialmodelingprep.com/image-stock/${item.symbol}.png`
-                        }
-                        alt={item.symbol}
-                        className="w-8 h-8 rounded-full mr-3"
-                        onError={(e) => {
-                          // Fallback to gradient if image fails to load
-                          e.currentTarget.style.display = "none";
-                          e.currentTarget.nextElementSibling?.classList.remove(
-                            "hidden"
-                          );
-                        }}
-                      />
-                      <div className="hidden w-8 h-8 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center mr-3 group-hover:shadow-lg group-hover:shadow-blue-500/50 transition">
-                        <span className="text-white font-bold text-sm">
-                          {item.symbol.substring(0, 1)}
-                        </span>
-                      </div>
+                      {type === "crypto" ? (
+                        <CryptoIcon symbol={item.symbol} />
+                      ) : (
+                        <>
+                          <img
+                            src={`https://financialmodelingprep.com/image-stock/${item.symbol}.png`}
+                            alt={item.symbol}
+                            className="w-8 h-8 rounded-full mr-3"
+                            onError={(e) => {
+                              const target = e.currentTarget as HTMLImageElement;
+                              target.style.display = "none";
+                              const fallback = target.nextElementSibling as HTMLElement;
+                              if (fallback) {
+                                fallback.classList.remove("hidden");
+                                fallback.classList.add("flex");
+                              }
+                            }}
+                          />
+                          <div className="hidden w-8 h-8 rounded-full bg-gradient-to-r from-green-500 to-blue-600 items-center justify-center mr-3">
+                            <span className="text-white font-bold text-sm">
+                              {item.symbol.substring(0, 1)}
+                            </span>
+                          </div>
+                        </>
+                      )}
                       <div>
                         <div className="text-white font-semibold">
                           {item.symbol}

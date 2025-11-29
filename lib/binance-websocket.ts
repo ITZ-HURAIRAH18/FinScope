@@ -32,6 +32,11 @@ class BinanceWebSocketClient {
     'maticusdt',
     'dotusdt',
     'avaxusdt',
+    'ordiusdt',
+    'shibusdt',
+    'ltcusdt',
+    'trxusdt',
+    'linkusdt',
   ];
 
   connect() {
