@@ -31,6 +31,8 @@ class FinnhubWebSocketClient {
     'AMD',
     'NFLX',
     'DIS',
+    'GLD', // Gold
+    'SLV', // Silver
   ];
 
   constructor(apiKey: string) {

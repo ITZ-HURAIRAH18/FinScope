@@ -47,7 +47,7 @@ export default function HomePage() {
     { name: 'Binance Coin', symbol: 'BNB' }
   ];
 
-  const stockSymbols = ['AAPL', 'GOOGL', 'TSLA'];
+  const stockSymbols = ['AAPL', 'GOOGL', 'TSLA', 'GLD', 'SLV'];
   return (
     <main className="min-h-screen bg-black">
       {/* Header */}
