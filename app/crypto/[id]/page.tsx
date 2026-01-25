@@ -9,6 +9,7 @@ import WatchlistButton from '@/components/watchlist/WatchlistButton';
 import CryptoChart from '@/components/crypto/CryptoChart';
 import LoadingScreen from '@/components/LoadingScreen';
 import TradingPanel from '@/components/trading/TradingPanel';
+import CryptoIcon from '@/components/crypto/CryptoIcon';
 
 export default function CryptoDetailPage() {
   const params = useParams();
@@ -41,18 +42,10 @@ export default function CryptoDetailPage() {
         <div className="glass-card p-4 sm:p-6 lg:p-8 rounded-2xl mb-6 sm:mb-8 border border-white">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
             <div className="flex items-center space-x-4">
-              <img 
-                src={`https://assets.coincap.io/assets/icons/${symbol.toLowerCase()}@2x.png`}
-                alt={symbol}
-                className="w-12 h-12 sm:w-16 sm:h-16 rounded-full"
-                onError={(e) => {
-                  e.currentTarget.style.display = 'none';
-                  e.currentTarget.nextElementSibling?.classList.remove('hidden');
-                }}
+              <CryptoIcon 
+                symbol={symbol} 
+                className="w-12 h-12 sm:w-16 sm:h-16 mr-3" 
               />
-              <div className="hidden w-12 h-12 sm:w-16 sm:h-16 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
-                <span className="text-white font-bold text-xl sm:text-2xl">{symbol.substring(0, 1)}</span>
-              </div>
               <div>
                 <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white">{symbol}</h1>
                 <p className="text-gray-400">Cryptocurrency</p>

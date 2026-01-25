@@ -8,56 +8,12 @@ import {
   getPriceChangeColor,
 } from "@/lib/utils";
 import { useRouter } from "next/navigation";
+import CryptoIcon from "../crypto/CryptoIcon";
 
 interface MarketTableProps {
   type: "crypto" | "stocks";
 }
 
-// Component to handle crypto icon with fallback sources
-function CryptoIcon({ symbol }: { symbol: string }) {
-  const [iconError, setIconError] = useState<number>(0);
-  
-  const iconSources = [
-    `https://assets.coincap.io/assets/icons/${symbol.toLowerCase()}@2x.png`,
-    `https://cryptologos.cc/logos/${symbol.toLowerCase()}-${symbol.toLowerCase()}-logo.png`,
-    `https://s2.coinmarketcap.com/static/img/coins/64x64/${symbol.toLowerCase()}.png`,
-  ];
-
-  const handleImageError = () => {
-    if (iconError < iconSources.length - 1) {
-      setIconError(iconError + 1);
-    } else {
-      // All sources failed, show gradient fallback
-      const imgElement = document.getElementById(`crypto-icon-${symbol}`) as HTMLImageElement;
-      const fallbackElement = document.getElementById(`crypto-fallback-${symbol}`);
-      if (imgElement && fallbackElement) {
-        imgElement.style.display = "none";
-        fallbackElement.classList.remove("hidden");
-        fallbackElement.classList.add("flex");
-      }
-    }
-  };
-
-  return (
-    <>
-      <img
-        id={`crypto-icon-${symbol}`}
-        src={iconSources[iconError]}
-        alt={symbol}
-        className="w-8 h-8 rounded-full mr-3"
-        onError={handleImageError}
-      />
-      <div
-        id={`crypto-fallback-${symbol}`}
-        className="hidden w-8 h-8 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 items-center justify-center mr-3"
-      >
-        <span className="text-white font-bold text-sm">
-          {symbol.substring(0, 1)}
-        </span>
-      </div>
-    </>
-  );
-}
 
 function MarketTable({ type }: MarketTableProps) {
   const router = useRouter();
@@ -178,7 +134,7 @@ function MarketTable({ type }: MarketTableProps) {
                   <td className="px-6 py-4">
                     <div className="flex items-center">
                       {type === "crypto" ? (
-                        <CryptoIcon symbol={item.symbol} />
+                        <CryptoIcon symbol={item.symbol} className="w-8 h-8 mr-3" />
                       ) : (
                         <>
                           <img
