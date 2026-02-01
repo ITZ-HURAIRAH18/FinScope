@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import Header from "@/components/Header";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { updateCryptoPrices, updateStockPrices } from "@/store/slices/marketSlice";
@@ -73,18 +74,50 @@ export default function HomePage() {
           </p>
 
           {/* Feature Pills */}
-          <div className="flex flex-wrap justify-center gap-4 pt-4">
-            <div className="glass-card px-6 py-3 rounded-full">
-              <span className="text-blue-400">⚡ Real-time Data</span>
+          <div className="flex flex-wrap justify-center gap-6 pt-8">
+            <div className="glass-card px-8 py-4 rounded-full flex items-center gap-4 hover:scale-105 transition duration-300 cursor-pointer">
+              <div className="relative w-12 h-12 rounded-full overflow-hidden shadow-lg shadow-blue-500/20">
+                <Image 
+                  src="https://images.unsplash.com/photo-1642790106117-e829e14a795f?auto=format&fit=crop&w=128&q=80"
+                  alt="Real-time"
+                  fill
+                  className="object-cover"
+                />
+              </div>
+              <span className="text-xl font-semibold text-blue-400">Real-time Data</span>
             </div>
-            <div className="glass-card px-6 py-3 rounded-full">
-              <span className="text-purple-400">📊 Interactive Charts</span>
+            <div className="glass-card px-8 py-4 rounded-full flex items-center gap-4 hover:scale-105 transition duration-300 cursor-pointer">
+              <div className="relative w-12 h-12 rounded-full overflow-hidden shadow-lg shadow-purple-500/20">
+                <Image 
+                  src="https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?auto=format&fit=crop&w=128&q=80"
+                  alt="Charts"
+                  fill
+                  className="object-cover"
+                />
+              </div>
+              <span className="text-xl font-semibold text-purple-400">Interactive Charts</span>
             </div>
-            <div className="glass-card px-6 py-3 rounded-full">
-              <span className="text-green-400">⭐ Watchlists</span>
+            <div className="glass-card px-8 py-4 rounded-full flex items-center gap-4 hover:scale-105 transition duration-300 cursor-pointer">
+              <div className="relative w-12 h-12 rounded-full overflow-hidden shadow-lg shadow-green-500/20">
+                <Image 
+                  src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=128&q=80"
+                  alt="Watchlists"
+                  fill
+                  className="object-cover"
+                />
+              </div>
+              <span className="text-xl font-semibold text-green-400">Watchlists</span>
             </div>
-            <div className="glass-card px-6 py-3 rounded-full">
-              <span className="text-pink-400">📈 Analytics</span>
+            <div className="glass-card px-8 py-4 rounded-full flex items-center gap-4 hover:scale-105 transition duration-300 cursor-pointer">
+               <div className="relative w-12 h-12 rounded-full overflow-hidden shadow-lg shadow-pink-500/20">
+                <Image 
+                  src="https://images.unsplash.com/photo-1551808525-51a94da548ce?auto=format&fit=crop&w=128&q=80"
+                  alt="Analytics"
+                  fill
+                  className="object-cover"
+                />
+              </div>
+              <span className="text-xl font-semibold text-pink-400">Analytics</span>
             </div>
           </div>
 
@@ -110,9 +143,14 @@ export default function HomePage() {
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
         <div className="grid md:grid-cols-3 gap-8">
           {/* Feature 1 */}
-          <div className="glass-card p-8 rounded-2xl space-y-4 hover:shadow-xl hover:shadow-blue-500/20 transition">
-            <div className="w-12 h-12 bg-blue-500/20 rounded-lg flex items-center justify-center">
-              <span className="text-3xl">📊</span>
+          <div className="glass-card p-8 rounded-2xl space-y-4 hover:shadow-xl hover:shadow-blue-500/20 transition group">
+            <div className="w-full h-48 relative rounded-xl overflow-hidden mb-4">
+              <Image
+                src="https://images.unsplash.com/photo-1642790106117-e829e14a795f?auto=format&fit=crop&w=800&q=80"
+                alt="Live Market Data"
+                fill
+                className="object-cover group-hover:scale-110 transition duration-500"
+              />
             </div>
             <h3 className="text-2xl font-bold text-white">Live Market Data</h3>
             <p className="text-gray-400">
@@ -122,9 +160,14 @@ export default function HomePage() {
           </div>
 
           {/* Feature 2 */}
-          <div className="glass-card p-8 rounded-2xl space-y-4 hover:shadow-xl hover:shadow-purple-500/20 transition">
-            <div className="w-12 h-12 bg-purple-500/20 rounded-lg flex items-center justify-center">
-              <span className="text-3xl">📈</span>
+          <div className="glass-card p-8 rounded-2xl space-y-4 hover:shadow-xl hover:shadow-purple-500/20 transition group">
+            <div className="w-full h-48 relative rounded-xl overflow-hidden mb-4">
+               <Image
+                src="https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?auto=format&fit=crop&w=800&q=80"
+                alt="Interactive Charts"
+                fill
+                className="object-cover group-hover:scale-110 transition duration-500"
+              />
             </div>
             <h3 className="text-2xl font-bold text-white">Interactive Charts</h3>
             <p className="text-gray-400">
@@ -134,9 +177,14 @@ export default function HomePage() {
           </div>
 
           {/* Feature 3 */}
-          <div className="glass-card p-8 rounded-2xl space-y-4 hover:shadow-xl hover:shadow-green-500/20 transition">
-            <div className="w-12 h-12 bg-green-500/20 rounded-lg flex items-center justify-center">
-              <span className="text-3xl">⭐</span>
+          <div className="glass-card p-8 rounded-2xl space-y-4 hover:shadow-xl hover:shadow-green-500/20 transition group">
+            <div className="w-full h-48 relative rounded-xl overflow-hidden mb-4">
+               <Image
+                src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=800&q=80"
+                alt="Personal Watchlists"
+                fill
+                className="object-cover group-hover:scale-110 transition duration-500"
+              />
             </div>
             <h3 className="text-2xl font-bold text-white">Personal Watchlists</h3>
             <p className="text-gray-400">
@@ -161,8 +209,17 @@ export default function HomePage() {
         <div className="grid md:grid-cols-2 gap-8">
           {/* Crypto Preview */}
           <div className="glass-card p-6 rounded-2xl">
-            <h3 className="text-2xl font-bold text-white mb-6 flex items-center">
-              <span className="mr-2">₿</span> Cryptocurrency
+            <h3 className="text-2xl font-bold text-white mb-6 flex items-center gap-3">
+              <div className="relative w-8 h-8 rounded-full overflow-hidden bg-orange-500 flex items-center justify-center">
+                 <Image 
+                  src="https://cryptologos.cc/logos/bitcoin-btc-logo.png"
+                  alt="Crypto"
+                  width={24}
+                  height={24}
+                  className="object-contain"
+                />
+              </div>
+               Cryptocurrency
             </h3>
             
             {/* Table Header */}
@@ -204,8 +261,11 @@ export default function HomePage() {
 
           {/* Stocks Preview */}
           <div className="glass-card p-6 rounded-2xl">
-            <h3 className="text-2xl font-bold text-white mb-6 flex items-center">
-              <span className="mr-2">📈</span> Stocks
+            <h3 className="text-2xl font-bold text-white mb-6 flex items-center gap-3">
+               <div className="relative w-8 h-8 rounded-full overflow-hidden bg-blue-500/20 flex items-center justify-center">
+                <span className="text-blue-400 font-bold">$</span>
+              </div>
+               Stocks
             </h3>
             
             {/* Table Header */}

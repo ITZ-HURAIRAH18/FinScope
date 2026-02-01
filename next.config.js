@@ -11,6 +11,7 @@ const nextConfig = {
       'financialmodelingprep.com',
       'cryptologos.cc',
       's2.coinmarketcap.com',
+      'images.unsplash.com',
     ],
   },
   webpack: (config) => {
