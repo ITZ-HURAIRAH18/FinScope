@@ -18,7 +18,7 @@ export default function AuthButton() {
   return (
     <Link
       href="/auth/login"
-      className="px-4 py-2 rounded-lg bg-blue-500 hover:bg-blue-600 transition text-white font-medium"
+      className="px-4 py-2 rounded-lg bg-red-500 hover:bg-red-600 transition text-white font-medium"
     >
       Login
     </Link>

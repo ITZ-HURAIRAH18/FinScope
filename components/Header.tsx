@@ -45,7 +45,7 @@ export default function Header({ activePage = "home" }: HeaderProps) {
         <div className="flex items-center justify-between">
           {/* Logo */}
           <Link href="/" className="flex items-center space-x-2">
-            <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
+            <div className="w-8 h-8 bg-gradient-to-r from-red-600 via-red-500 to-pink-500 rounded-lg flex items-center justify-center">
               <span className="text-white font-bold text-lg">F</span>
             </div>
             <span className="text-2xl font-bold gradient-text">FinScope</span>
@@ -125,7 +125,7 @@ export default function Header({ activePage = "home" }: HeaderProps) {
               href={link.href}
               className={`block px-4 py-3 rounded-lg transition ${
                 activePage === link.page
-                  ? "bg-blue-500 text-white font-semibold"
+                  ? "bg-red-500 text-white font-semibold"
                   : "text-gray-300 hover:bg-white/10 hover:text-white"
               }`}
             >

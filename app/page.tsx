@@ -45,7 +45,9 @@ export default function HomePage() {
   const cryptoSymbols = [
     { name: 'Bitcoin', symbol: 'BTC' },
     { name: 'Ethereum', symbol: 'ETH' },
-    { name: 'Binance Coin', symbol: 'BNB' }
+    { name: 'Binance Coin', symbol: 'BNB' },
+    { name: 'Cardano', symbol: 'ADA' },
+    { name: 'Solana', symbol: 'SOL' }
   ];
 
   const stockSymbols = ['AAPL', 'GOOGL', 'TSLA', 'GLD', 'SLV'];
@@ -76,7 +78,7 @@ export default function HomePage() {
           {/* Feature Pills */}
           <div className="flex flex-wrap justify-center gap-6 pt-8">
             <div className="glass-card px-8 py-4 rounded-full flex items-center gap-4 hover:scale-105 transition duration-300 cursor-pointer">
-              <div className="relative w-12 h-12 rounded-full overflow-hidden shadow-lg shadow-blue-500/20">
+              <div className="relative w-12 h-12 rounded-full overflow-hidden shadow-lg shadow-red-500/20">
                 <Image 
                   src="https://images.unsplash.com/photo-1642790106117-e829e14a795f?auto=format&fit=crop&w=128&q=80"
                   alt="Real-time"
@@ -84,10 +86,10 @@ export default function HomePage() {
                   className="object-cover"
                 />
               </div>
-              <span className="text-xl font-semibold text-blue-400">Real-time Data</span>
+              <span className="text-xl font-semibold text-red-400">Real-time Data</span>
             </div>
             <div className="glass-card px-8 py-4 rounded-full flex items-center gap-4 hover:scale-105 transition duration-300 cursor-pointer">
-              <div className="relative w-12 h-12 rounded-full overflow-hidden shadow-lg shadow-purple-500/20">
+              <div className="relative w-12 h-12 rounded-full overflow-hidden shadow-lg shadow-pink-500/20">
                 <Image 
                   src="https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?auto=format&fit=crop&w=128&q=80"
                   alt="Charts"
@@ -95,10 +97,10 @@ export default function HomePage() {
                   className="object-cover"
                 />
               </div>
-              <span className="text-xl font-semibold text-purple-400">Interactive Charts</span>
+              <span className="text-xl font-semibold text-pink-400">Interactive Charts</span>
             </div>
             <div className="glass-card px-8 py-4 rounded-full flex items-center gap-4 hover:scale-105 transition duration-300 cursor-pointer">
-              <div className="relative w-12 h-12 rounded-full overflow-hidden shadow-lg shadow-green-500/20">
+              <div className="relative w-12 h-12 rounded-full overflow-hidden shadow-lg shadow-rose-500/20">
                 <Image 
                   src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=128&q=80"
                   alt="Watchlists"
@@ -106,7 +108,7 @@ export default function HomePage() {
                   className="object-cover"
                 />
               </div>
-              <span className="text-xl font-semibold text-green-400">Watchlists</span>
+              <span className="text-xl font-semibold text-rose-400">Watchlists</span>
             </div>
             <div className="glass-card px-8 py-4 rounded-full flex items-center gap-4 hover:scale-105 transition duration-300 cursor-pointer">
                <div className="relative w-12 h-12 rounded-full overflow-hidden shadow-lg shadow-pink-500/20">
@@ -125,7 +127,7 @@ export default function HomePage() {
           <div className="flex flex-col sm:flex-row gap-4 justify-center pt-8">
             <Link
               href="/dashboard"
-              className="px-8 py-4 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg text-white font-semibold text-lg hover:shadow-lg hover:shadow-blue-500/50 transition transform hover:-translate-y-1"
+              className="px-8 py-4 bg-gradient-to-r from-red-600 via-red-500 to-pink-500 rounded-lg text-white font-semibold text-lg hover:shadow-lg hover:shadow-red-500/50 transition transform hover:-translate-y-1"
             >
               View Markets
             </Link>
@@ -143,7 +145,7 @@ export default function HomePage() {
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
         <div className="grid md:grid-cols-3 gap-8">
           {/* Feature 1 */}
-          <div className="glass-card p-8 rounded-2xl space-y-4 hover:shadow-xl hover:shadow-blue-500/20 transition group">
+          <div className="glass-card p-8 rounded-2xl space-y-4 hover:shadow-xl hover:shadow-red-500/20 transition group">
             <div className="w-full h-48 relative rounded-xl overflow-hidden mb-4">
               <Image
                 src="https://images.unsplash.com/photo-1642790106117-e829e14a795f?auto=format&fit=crop&w=800&q=80"
@@ -160,7 +162,7 @@ export default function HomePage() {
           </div>
 
           {/* Feature 2 */}
-          <div className="glass-card p-8 rounded-2xl space-y-4 hover:shadow-xl hover:shadow-purple-500/20 transition group">
+          <div className="glass-card p-8 rounded-2xl space-y-4 hover:shadow-xl hover:shadow-pink-500/20 transition group">
             <div className="w-full h-48 relative rounded-xl overflow-hidden mb-4">
                <Image
                 src="https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?auto=format&fit=crop&w=800&q=80"
@@ -177,7 +179,7 @@ export default function HomePage() {
           </div>
 
           {/* Feature 3 */}
-          <div className="glass-card p-8 rounded-2xl space-y-4 hover:shadow-xl hover:shadow-green-500/20 transition group">
+          <div className="glass-card p-8 rounded-2xl space-y-4 hover:shadow-xl hover:shadow-rose-500/20 transition group">
             <div className="w-full h-48 relative rounded-xl overflow-hidden mb-4">
                <Image
                 src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=800&q=80"
@@ -195,55 +197,53 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Market Preview */}
+      {/* Market Preview with Charts */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
         <div className="text-center mb-12">
           <h2 className="text-4xl font-bold text-white mb-4">
             Markets at a Glance
           </h2>
           <p className="text-gray-400 text-lg">
-            See what&apos;s moving in crypto and stock markets
+            Real-time market updates with live charts
           </p>
         </div>
 
         <div className="grid md:grid-cols-2 gap-8">
-          {/* Crypto Preview */}
+          {/* Crypto Chart */}
           <div className="glass-card p-6 rounded-2xl">
-            <h3 className="text-2xl font-bold text-white mb-6 flex items-center gap-3">
-              <div className="relative w-8 h-8 rounded-full overflow-hidden bg-orange-500 flex items-center justify-center">
-                 <Image 
-                  src="https://cryptologos.cc/logos/bitcoin-btc-logo.png"
-                  alt="Crypto"
-                  width={24}
-                  height={24}
-                  className="object-contain"
-                />
-              </div>
-               Cryptocurrency
-            </h3>
-            
-            {/* Table Header */}
-            <div className="grid grid-cols-3 gap-4 pb-3 border-b border-white/10 mb-4">
-              <div className="text-gray-400 text-sm font-semibold">Symbol</div>
-              <div className="text-gray-400 text-sm font-semibold text-right">Price</div>
-              <div className="text-gray-400 text-sm font-semibold text-right">24h Change</div>
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-2xl font-bold text-white flex items-center gap-3">
+                <div className="relative w-8 h-8 rounded-full overflow-hidden bg-orange-500 flex items-center justify-center">
+                  <Image 
+                    src="https://cryptologos.cc/logos/bitcoin-btc-logo.png"
+                    alt="Crypto"
+                    width={24}
+                    height={24}
+                    className="object-contain"
+                  />
+                </div>
+                Cryptocurrency
+              </h3>
             </div>
             
-            {/* Table Rows */}
-            <div className="space-y-3">
+            {/* Live Prices */}
+            <div className="space-y-4 mb-6">
               {cryptoSymbols.map(({ name, symbol }) => {
                 const priceData = cryptoPrices[symbol];
                 return (
-                  <div key={symbol} className="grid grid-cols-3 gap-4 items-center py-1">
-                    <div className="text-white font-medium">{name}</div>
-                    <div className="text-white font-mono text-right">
-                      {priceData ? formatCurrency(priceData.price) : 'Loading...'}
+                  <div key={symbol} className="flex items-center justify-between p-3 rounded-lg bg-white/5 hover:bg-white/10 transition">
+                    <div>
+                      <div className="text-white font-semibold">{name}</div>
+                      <div className="text-gray-400 text-sm">{symbol}</div>
                     </div>
                     <div className="text-right">
+                      <div className="text-white font-mono font-semibold">
+                        {priceData ? formatCurrency(priceData.price) : 'Loading...'}
+                      </div>
                       {priceData && (
-                        <span className={`font-semibold ${getPriceChangeColor(priceData.priceChangePercent24h)}`}>
+                        <div className={`text-sm font-semibold ${getPriceChangeColor(priceData.priceChangePercent24h)}`}>
                           {formatPercentage(priceData.priceChangePercent24h)}
-                        </span>
+                        </div>
                       )}
                     </div>
                   </div>
@@ -253,43 +253,41 @@ export default function HomePage() {
             
             <Link
               href="/dashboard?tab=crypto"
-              className="mt-6 block text-center text-blue-400 hover:text-blue-300 transition"
+              className="mt-4 block w-full text-center py-3 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/20 hover:text-red-300 transition font-semibold"
             >
               View all crypto →
             </Link>
           </div>
 
-          {/* Stocks Preview */}
+          {/* Stocks Chart */}
           <div className="glass-card p-6 rounded-2xl">
-            <h3 className="text-2xl font-bold text-white mb-6 flex items-center gap-3">
-               <div className="relative w-8 h-8 rounded-full overflow-hidden bg-blue-500/20 flex items-center justify-center">
-                <span className="text-blue-400 font-bold">$</span>
-              </div>
-               Stocks
-            </h3>
-            
-            {/* Table Header */}
-            <div className="grid grid-cols-3 gap-4 pb-3 border-b border-white/10 mb-4">
-              <div className="text-gray-400 text-sm font-semibold">Symbol</div>
-              <div className="text-gray-400 text-sm font-semibold text-right">Price</div>
-              <div className="text-gray-400 text-sm font-semibold text-right">Change</div>
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-2xl font-bold text-white flex items-center gap-3">
+                <div className="relative w-8 h-8 rounded-full overflow-hidden bg-pink-500/20 flex items-center justify-center">
+                  <span className="text-pink-400 font-bold text-xl">$</span>
+                </div>
+                Stocks
+              </h3>
             </div>
             
-            {/* Table Rows */}
-            <div className="space-y-3">
+            {/* Live Prices */}
+            <div className="space-y-4 mb-6">
               {stockSymbols.map((symbol) => {
                 const priceData = stockPrices[symbol];
                 return (
-                  <div key={symbol} className="grid grid-cols-3 gap-4 items-center py-1">
-                    <div className="text-white font-medium">{symbol}</div>
-                    <div className="text-white font-mono text-right">
-                      {priceData ? formatCurrency(priceData.price) : 'Loading...'}
+                  <div key={symbol} className="flex items-center justify-between p-3 rounded-lg bg-white/5 hover:bg-white/10 transition">
+                    <div>
+                      <div className="text-white font-semibold">{symbol}</div>
+                      <div className="text-gray-400 text-sm">Stock</div>
                     </div>
                     <div className="text-right">
+                      <div className="text-white font-mono font-semibold">
+                        {priceData ? formatCurrency(priceData.price) : 'Loading...'}
+                      </div>
                       {priceData && (
-                        <span className={`font-semibold ${getPriceChangeColor(priceData.priceChangePercent)}`}>
+                        <div className={`text-sm font-semibold ${getPriceChangeColor(priceData.priceChangePercent)}`}>
                           {formatPercentage(priceData.priceChangePercent)}
-                        </span>
+                        </div>
                       )}
                     </div>
                   </div>
@@ -299,7 +297,7 @@ export default function HomePage() {
             
             <Link
               href="/dashboard?tab=stocks"
-              className="mt-6 block text-center text-blue-400 hover:text-blue-300 transition "
+              className="mt-4 block w-full text-center py-3 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/20 hover:text-red-300 transition font-semibold"
             >
               View all stocks →
             </Link>
