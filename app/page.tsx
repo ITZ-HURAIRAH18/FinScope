@@ -64,7 +64,7 @@ export default function HomePage() {
             <h1 className="text-5xl md:text-7xl font-bold text-white">
               Track Crypto & Stocks
             </h1>
-            <h2 className="text-4xl md:text-6xl font-bold gradient-text">
+            <h2 className="text-4xl md:text-6xl font-bold gradient-text animate-pulse-scale">
               In One Place
             </h2>
           </div>
@@ -78,7 +78,7 @@ export default function HomePage() {
           {/* Feature Pills */}
           <div className="flex flex-wrap justify-center gap-6 pt-8">
             <div className="glass-card px-8 py-4 rounded-full flex items-center gap-4 hover:scale-105 transition duration-300 cursor-pointer animate-scaleIn animate-delay-300">
-              <div className="relative w-12 h-12 rounded-full overflow-hidden shadow-lg shadow-red-500/20">
+              <div className="relative w-12 h-12 rounded-full overflow-hidden shadow-lg shadow-red-500/20 animate-blink">
                 <Image 
                   src="https://images.unsplash.com/photo-1642790106117-e829e14a795f?auto=format&fit=crop&w=128&q=80"
                   alt="Real-time"
