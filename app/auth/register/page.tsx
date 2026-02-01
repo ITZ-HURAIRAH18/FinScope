@@ -53,21 +53,9 @@ export default function RegisterPage() {
         return;
       }
 
-      // Auto sign in after registration
-      const signInResult = await signIn('credentials', {
-        email,
-        password,
-        redirect: false,
-      });
-
-      if (signInResult?.error) {
-        // Registration succeeded but auto login failed
-        router.push('/auth/login');
-      } else {
-        // Both registration and login succeeded
-        router.push('/dashboard');
-        router.refresh();
-      }
+      // Redirect to OTP verification page
+      setError('');
+      router.push(`/auth/verify-email?email=${encodeURIComponent(email)}`);
     } catch (error) {
       setError('Something went wrong');
       setIsLoading(false);

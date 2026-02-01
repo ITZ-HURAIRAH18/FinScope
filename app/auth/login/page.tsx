@@ -1,20 +1,39 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { signIn } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 
 export default function LoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    // Check for verification status
+    const verified = searchParams.get('verified');
+    const errorParam = searchParams.get('error');
+
+    if (verified === 'success') {
+      setSuccess('Email verified successfully! You can now log in.');
+    } else if (verified === 'already') {
+      setSuccess('Email already verified. You can log in.');
+    } else if (errorParam === 'invalid_token') {
+      setError('Invalid verification token. Please try again or contact support.');
+    } else if (errorParam === 'token_expired') {
+      setError('Verification token has expired. Please request a new one.');
+    }
+  }, [searchParams]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setSuccess('');
     setIsLoading(true);
 
     try {
@@ -25,7 +44,11 @@ export default function LoginPage() {
       });
 
       if (result?.error) {
-        setError('Invalid email or password');
+        if (result.error.includes('verify your email')) {
+          setError('Please verify your email before logging in. Check your inbox for the verification link.');
+        } else {
+          setError('Invalid email or password');
+        }
         setIsLoading(false);
         return;
       }
@@ -56,6 +79,12 @@ export default function LoginPage() {
         <div className="glass-card p-8 rounded-2xl">
           <h1 className="text-3xl font-bold text-white mb-2">Welcome Back</h1>
           <p className="text-gray-400 mb-6">Sign in to your account</p>
+
+          {success && (
+            <div className="mb-4 p-4 bg-green-500/10 border border-green-500/50 rounded-lg">
+              <p className="text-green-400 text-sm">{success}</p>
+            </div>
+          )}
 
           {error && (
             <div className="bg-red-500/10 border border-red-500 text-red-500 px-4 py-3 rounded-lg mb-6">

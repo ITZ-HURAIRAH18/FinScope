@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 import { prisma } from '@/lib/prisma';
+import { generateOTP, sendOTPEmail } from '@/lib/email';
 
 export async function POST(request: NextRequest) {
   try {
@@ -30,14 +31,28 @@ export async function POST(request: NextRequest) {
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 12);
 
+    // Generate OTP
+    const otp = generateOTP();
+    const tokenExpires = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+
     // Create user
     const user = await prisma.user.create({
       data: {
         email,
         password: hashedPassword,
         name: name || null,
+        emailVerificationToken: otp,
+        tokenExpires: tokenExpires,
       },
     });
+
+    // Send OTP email
+    try {
+      await sendOTPEmail(email, name, otp);
+    } catch (emailError) {
+      console.error('Error sending OTP email:', emailError);
+      // Continue even if email fails - user is created
+    }
 
     return NextResponse.json(
       {
@@ -46,7 +61,7 @@ export async function POST(request: NextRequest) {
           email: user.email,
           name: user.name,
         },
-        message: 'User created successfully',
+        message: 'User created successfully. Please check your email for verification code.',
       },
       { status: 201 }
     );
