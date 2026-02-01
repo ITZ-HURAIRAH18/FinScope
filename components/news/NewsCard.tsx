@@ -48,7 +48,7 @@ export default function NewsCard({ article }: NewsCardProps) {
             }}
           />
         ) : (
-          <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-blue-900/20 to-purple-900/20">
+          <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-red-900/20 to-pink-900/20">
             <span className="text-6xl">📰</span>
           </div>
         )}

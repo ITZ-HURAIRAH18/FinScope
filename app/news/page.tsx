@@ -81,7 +81,7 @@ function NewsContent() {
               onClick={() => handleCategoryChange(category.id)}
               className={`px-6 py-3 rounded-full font-semibold transition-all duration-300 ${
                 activeCategory === category.id
-                  ? "bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-lg shadow-blue-500/50"
+                  ? "bg-gradient-to-r from-red-600 via-red-500 to-pink-500 text-white shadow-lg shadow-red-500/50"
                   : "glass-card text-gray-300 hover:text-white hover:shadow-lg"
               }`}
             >
@@ -124,7 +124,7 @@ function NewsContent() {
               <p className="text-gray-400 mb-6">{error}</p>
               <button
                 onClick={() => fetchNews(activeCategory)}
-                className="px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg text-white font-semibold hover:shadow-lg hover:shadow-blue-500/50 transition"
+                className="px-6 py-3 bg-gradient-to-r from-red-600 via-red-500 to-pink-500 rounded-lg text-white font-semibold hover:shadow-lg hover:shadow-red-500/50 transition"
               >
                 Try Again
               </button>
@@ -152,14 +152,6 @@ function NewsContent() {
           </div>
         )}
       </section>
-
-      {/* Footer */}
-      <footer className="border-t border-white/10 mt-20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 text-center text-gray-400">
-          <p>© {new Date().getFullYear()} FinScope. All rights reserved.</p>
-          <p className="mt-2">Developed by M Abu Hurairah</p>
-        </div>
-      </footer>
     </main>
   );
 }

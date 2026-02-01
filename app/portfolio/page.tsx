@@ -53,7 +53,7 @@ export default function PortfolioPage() {
               <p className="text-gray-400 mb-4">You don&apos;t have any holdings yet</p>
               <Link
                 href="/dashboard"
-                className="inline-block px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white font-semibold rounded-lg hover:shadow-lg transition"
+                className="inline-block px-6 py-3 bg-gradient-to-r from-red-600 via-red-500 to-pink-500 text-white font-semibold rounded-lg hover:shadow-lg transition"
               >
                 Start Trading
               </Link>

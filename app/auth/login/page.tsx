@@ -45,7 +45,7 @@ export default function LoginPage() {
         {/* Logo */}
         <div className="text-center mb-8">
           <Link href="/" className="inline-flex items-center space-x-2">
-            <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
+            <div className="w-12 h-12 bg-gradient-to-r from-red-600 via-red-500 to-pink-500 rounded-lg flex items-center justify-center">
               <span className="text-white font-bold text-2xl">F</span>
             </div>
             <span className="text-3xl font-bold gradient-text">FinScope</span>
@@ -97,7 +97,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg text-white font-semibold hover:shadow-lg hover:shadow-blue-500/50 transition transform hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+              className="w-full px-6 py-3 bg-gradient-to-r from-red-600 via-red-500 to-pink-500 rounded-lg text-white font-semibold hover:shadow-lg hover:shadow-red-500/50 transition transform hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
             >
               {isLoading ? 'Signing in...' : 'Sign In'}
             </button>
@@ -106,7 +106,7 @@ export default function LoginPage() {
           <div className="mt-6 text-center">
             <p className="text-gray-400">
               Don&apos;t have an account?{' '}
-              <Link href="/auth/register" className="text-blue-400 hover:text-blue-300 transition">
+              <Link href="/auth/register" className="text-red-400 hover:text-red-300 transition">
                 Sign up
               </Link>
             </p>

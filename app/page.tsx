@@ -70,14 +70,14 @@ export default function HomePage() {
           </div>
 
           {/* Subtitle */}
-          <p className="text-xl md:text-2xl text-gray-300 max-w-3xl mx-auto">
+          <p className="text-xl md:text-2xl text-gray-300 max-w-3xl mx-auto animate-fadeIn animate-delay-200">
             Real-time market data, interactive charts, and powerful analytics
             for cryptocurrencies and stocks
           </p>
 
           {/* Feature Pills */}
           <div className="flex flex-wrap justify-center gap-6 pt-8">
-            <div className="glass-card px-8 py-4 rounded-full flex items-center gap-4 hover:scale-105 transition duration-300 cursor-pointer">
+            <div className="glass-card px-8 py-4 rounded-full flex items-center gap-4 hover:scale-105 transition duration-300 cursor-pointer animate-scaleIn animate-delay-300">
               <div className="relative w-12 h-12 rounded-full overflow-hidden shadow-lg shadow-red-500/20">
                 <Image 
                   src="https://images.unsplash.com/photo-1642790106117-e829e14a795f?auto=format&fit=crop&w=128&q=80"
@@ -88,7 +88,7 @@ export default function HomePage() {
               </div>
               <span className="text-xl font-semibold text-red-400">Real-time Data</span>
             </div>
-            <div className="glass-card px-8 py-4 rounded-full flex items-center gap-4 hover:scale-105 transition duration-300 cursor-pointer">
+            <div className="glass-card px-8 py-4 rounded-full flex items-center gap-4 hover:scale-105 transition duration-300 cursor-pointer animate-scaleIn animate-delay-400">
               <div className="relative w-12 h-12 rounded-full overflow-hidden shadow-lg shadow-pink-500/20">
                 <Image 
                   src="https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?auto=format&fit=crop&w=128&q=80"
@@ -99,7 +99,7 @@ export default function HomePage() {
               </div>
               <span className="text-xl font-semibold text-pink-400">Interactive Charts</span>
             </div>
-            <div className="glass-card px-8 py-4 rounded-full flex items-center gap-4 hover:scale-105 transition duration-300 cursor-pointer">
+            <div className="glass-card px-8 py-4 rounded-full flex items-center gap-4 hover:scale-105 transition duration-300 cursor-pointer animate-scaleIn animate-delay-500">
               <div className="relative w-12 h-12 rounded-full overflow-hidden shadow-lg shadow-rose-500/20">
                 <Image 
                   src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=128&q=80"
@@ -110,7 +110,7 @@ export default function HomePage() {
               </div>
               <span className="text-xl font-semibold text-rose-400">Watchlists</span>
             </div>
-            <div className="glass-card px-8 py-4 rounded-full flex items-center gap-4 hover:scale-105 transition duration-300 cursor-pointer">
+            <div className="glass-card px-8 py-4 rounded-full flex items-center gap-4 hover:scale-105 transition duration-300 cursor-pointer animate-scaleIn animate-delay-600">
                <div className="relative w-12 h-12 rounded-full overflow-hidden shadow-lg shadow-pink-500/20">
                 <Image 
                   src="https://images.unsplash.com/photo-1551808525-51a94da548ce?auto=format&fit=crop&w=128&q=80"
@@ -127,13 +127,13 @@ export default function HomePage() {
           <div className="flex flex-col sm:flex-row gap-4 justify-center pt-8">
             <Link
               href="/dashboard"
-              className="px-8 py-4 bg-gradient-to-r from-red-600 via-red-500 to-pink-500 rounded-lg text-white font-semibold text-lg hover:shadow-lg hover:shadow-red-500/50 transition transform hover:-translate-y-1"
+              className="px-8 py-4 bg-gradient-to-r from-red-600 via-red-500 to-pink-500 rounded-lg text-white font-semibold text-lg hover:shadow-lg hover:shadow-red-500/50 transition transform hover:-translate-y-1 animate-slideUp animate-delay-300"
             >
               View Markets
             </Link>
             <Link
               href="/auth/register"
-              className="px-8 py-4 glass-card rounded-lg text-white font-semibold text-lg hover:shadow-lg transition transform hover:-translate-y-1"
+              className="px-8 py-4 glass-card rounded-lg text-white font-semibold text-lg hover:shadow-lg transition transform hover:-translate-y-1 animate-slideUp animate-delay-400"
             >
               Get Started Free
             </Link>
@@ -145,7 +145,7 @@ export default function HomePage() {
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
         <div className="grid md:grid-cols-3 gap-8">
           {/* Feature 1 */}
-          <div className="glass-card p-8 rounded-2xl space-y-4 hover:shadow-xl hover:shadow-red-500/20 transition group">
+          <div className="glass-card p-8 rounded-2xl space-y-4 hover:shadow-xl hover:shadow-red-500/20 transition group animate-slideUp">
             <div className="w-full h-48 relative rounded-xl overflow-hidden mb-4">
               <Image
                 src="https://images.unsplash.com/photo-1642790106117-e829e14a795f?auto=format&fit=crop&w=800&q=80"
@@ -162,7 +162,7 @@ export default function HomePage() {
           </div>
 
           {/* Feature 2 */}
-          <div className="glass-card p-8 rounded-2xl space-y-4 hover:shadow-xl hover:shadow-pink-500/20 transition group">
+          <div className="glass-card p-8 rounded-2xl space-y-4 hover:shadow-xl hover:shadow-pink-500/20 transition group animate-slideUp animate-delay-200">
             <div className="w-full h-48 relative rounded-xl overflow-hidden mb-4">
                <Image
                 src="https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?auto=format&fit=crop&w=800&q=80"
@@ -179,7 +179,7 @@ export default function HomePage() {
           </div>
 
           {/* Feature 3 */}
-          <div className="glass-card p-8 rounded-2xl space-y-4 hover:shadow-xl hover:shadow-rose-500/20 transition group">
+          <div className="glass-card p-8 rounded-2xl space-y-4 hover:shadow-xl hover:shadow-rose-500/20 transition group animate-slideUp animate-delay-400">
             <div className="w-full h-48 relative rounded-xl overflow-hidden mb-4">
                <Image
                 src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=800&q=80"
@@ -199,7 +199,7 @@ export default function HomePage() {
 
       {/* Market Preview with Charts */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-        <div className="text-center mb-12">
+        <div className="text-center mb-12 animate-fadeIn">
           <h2 className="text-4xl font-bold text-white mb-4">
             Markets at a Glance
           </h2>
@@ -210,7 +210,7 @@ export default function HomePage() {
 
         <div className="grid md:grid-cols-2 gap-8">
           {/* Crypto Chart */}
-          <div className="glass-card p-6 rounded-2xl">
+          <div className="glass-card p-6 rounded-2xl animate-slideInLeft">
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-2xl font-bold text-white flex items-center gap-3">
                 <div className="relative w-8 h-8 rounded-full overflow-hidden bg-orange-500 flex items-center justify-center">
@@ -260,7 +260,7 @@ export default function HomePage() {
           </div>
 
           {/* Stocks Chart */}
-          <div className="glass-card p-6 rounded-2xl">
+          <div className="glass-card p-6 rounded-2xl animate-slideInRight">
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-2xl font-bold text-white flex items-center gap-3">
                 <div className="relative w-8 h-8 rounded-full overflow-hidden bg-pink-500/20 flex items-center justify-center">
@@ -304,14 +304,6 @@ export default function HomePage() {
           </div>
         </div>
       </section>
-
-      {/* Footer */}
-      <footer className="border-t border-white/10 mt-20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 text-center text-gray-400">
-          <p>© {new Date().getFullYear()} FinScope. All rights reserved.</p>
-          <p className="mt-2">Developed by M Abu Hurairah</p>
-        </div>
-      </footer>
     </main>
   );
 }

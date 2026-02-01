@@ -30,7 +30,7 @@ export default function CryptoIcon({ symbol, className = "w-8 h-8" }: CryptoIcon
   if (showFallback) {
     return (
       <div
-        className={`${className} flex bg-gradient-to-r from-blue-500 to-purple-600 rounded-full items-center justify-center`}
+        className={`${className} flex bg-gradient-to-r from-red-600 via-red-500 to-pink-500 rounded-full items-center justify-center`}
       >
         <span className="text-white font-bold text-sm">
           {symbol.substring(0, 1)}

@@ -124,7 +124,7 @@ export default function ProfilePage() {
               <div className={`w-24 h-24 rounded-full flex items-center justify-center overflow-hidden ${
                 previewImage 
                   ? 'bg-gray-800' 
-                  : 'bg-gradient-to-r from-blue-500 to-purple-600 text-white font-bold text-2xl'
+                  : 'bg-gradient-to-r from-red-600 via-red-500 to-pink-500 text-white font-bold text-2xl'
               }`}>
                 {previewImage ? (
                   <img 
@@ -139,7 +139,7 @@ export default function ProfilePage() {
 
               {/* Upload Button */}
               <div>
-                <label className="cursor-pointer px-4 py-2 bg-blue-500 hover:bg-blue-600 rounded-lg text-white font-medium transition inline-block">
+                <label className="cursor-pointer px-4 py-2 bg-red-500 hover:bg-red-600 rounded-lg text-white font-medium transition inline-block">
                   Choose Image
                   <input
                     type="file"
@@ -160,7 +160,7 @@ export default function ProfilePage() {
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="w-full px-4 py-3 rounded-lg bg-white/10 border border-white/20 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-3 rounded-lg bg-white/10 border border-white/20 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-500"
               placeholder="Enter your name"
             />
           </div>
@@ -188,7 +188,7 @@ export default function ProfilePage() {
             <button
               onClick={handleSave}
               disabled={isUploading}
-              className="px-6 py-3 rounded-lg bg-gradient-to-r from-blue-500 to-purple-600 text-white hover:shadow-lg transition font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-6 py-3 rounded-lg bg-gradient-to-r from-red-600 via-red-500 to-pink-500 text-white hover:shadow-lg transition font-medium disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isUploading ? "Saving..." : "Save Changes"}
             </button>

@@ -89,7 +89,7 @@ function DashboardContent() {
                 onClick={() => dispatch(setActiveMarket("crypto"))}
                 className={`px-6 py-2 rounded-lg font-semibold transition ${
                   activeMarket === "crypto"
-                    ? "bg-blue-500 text-white"
+                    ? "bg-red-500 text-white"
                     : "bg-white/10 text-gray-300 hover:bg-white/20"
                 }`}
               >
@@ -99,7 +99,7 @@ function DashboardContent() {
                 onClick={() => dispatch(setActiveMarket("stocks"))}
                 className={`px-6 py-2 rounded-lg font-semibold transition ${
                   activeMarket === "stocks"
-                    ? "bg-blue-500 text-white"
+                    ? "bg-red-500 text-white"
                     : "bg-white/10 text-gray-300 hover:bg-white/20"
                 }`}
               >
@@ -109,7 +109,7 @@ function DashboardContent() {
                 onClick={() => dispatch(setActiveMarket("both"))}
                 className={`px-6 py-2 rounded-lg font-semibold transition ${
                   activeMarket === "both"
-                    ? "bg-blue-500 text-white"
+                    ? "bg-red-500 text-white"
                     : "bg-white/10 text-gray-300 hover:bg-white/20"
                 }`}
               >
@@ -124,7 +124,7 @@ function DashboardContent() {
                 placeholder="Search symbols..."
                 value={searchQuery}
                 onChange={(e) => dispatch(setSearchQuery(e.target.value))}
-                className="w-full px-4 py-2 rounded-lg bg-white/10 border border-white/20 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-4 py-2 rounded-lg bg-white/10 border border-white/20 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-500"
               />
             </div>
           </div>

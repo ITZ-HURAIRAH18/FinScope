@@ -91,7 +91,7 @@ export default function WatchlistPage() {
             <p className="text-gray-500 mb-6">Start adding crypto and stocks to track them here</p>
             <a
               href="/dashboard"
-              className="inline-block px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg text-white font-semibold hover:shadow-lg transition"
+              className="inline-block px-6 py-3 bg-gradient-to-r from-red-600 via-red-500 to-pink-500 rounded-lg text-white font-semibold hover:shadow-lg transition"
             >
               Browse Markets
             </a>

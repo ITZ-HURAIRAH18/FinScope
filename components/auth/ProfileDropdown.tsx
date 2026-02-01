@@ -45,7 +45,7 @@ export default function ProfileDropdown() {
         className="flex items-center space-x-2 px-3 py-2 rounded-lg hover:bg-white/10 transition"
       >
         {/* Avatar */}
-        <div className="w-8 h-8 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center text-white font-semibold overflow-hidden">
+        <div className="w-8 h-8 rounded-full bg-gradient-to-r from-red-600 via-red-500 to-pink-500 flex items-center justify-center text-white font-semibold overflow-hidden">
           {userImage ? (
             <img 
               src={userImage} 
@@ -74,7 +74,7 @@ export default function ProfileDropdown() {
           {/* User Info */}
           <div className="p-4 border-b border-white/10">
             <div className="flex items-center space-x-3">
-              <div className="w-12 h-12 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold overflow-hidden">
+              <div className="w-12 h-12 rounded-full bg-gradient-to-r from-red-600 via-red-500 to-pink-500 flex items-center justify-center text-white font-bold overflow-hidden">
                 {userImage ? (
                   <img 
                     src={userImage} 
