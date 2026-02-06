@@ -39,17 +39,23 @@ For Gmail:
 
 ## Automatic Cleanup
 
-The system uses two mechanisms to clean up unverified users:
+The system uses Vercel Cron Jobs to clean up unverified users:
 
-### 1. Vercel Cron Job (Production)
+### 1. Vercel Cron Job (Primary Method)
 
 If you're deploying to Vercel, the `vercel.json` file is already configured to run the cleanup job every 5 minutes.
 
-No additional setup needed - Vercel will automatically run the cron job.
+**No additional setup needed** - Vercel will automatically run the cron job.
 
-### 2. Client-Side Trigger (Backup)
+### 2. Client-Side Trigger (Optional - Not Currently Enabled)
 
-The `CleanupTrigger` component runs on every page load and triggers the cleanup endpoint. This serves as a backup mechanism if the cron job fails or if you're not using Vercel.
+You can optionally add a `CleanupTrigger` component to run cleanup when users visit the site. This serves as a backup mechanism.
+
+To enable it:
+1. Import in `app/layout.tsx`: `import CleanupTrigger from "@/components/CleanupTrigger";`
+2. Add to the body: `<CleanupTrigger />`
+
+**Note:** This is disabled by default since Vercel Cron handles it automatically.
 
 ### 3. Manual Trigger (Development)
 

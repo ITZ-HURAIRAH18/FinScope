@@ -57,10 +57,7 @@ Implemented a complete email verification system with OTP (One-Time Password) th
 - Shows warning that account will be deleted
 - Resets timer when new OTP is requested
 
-### 3. `/app/layout.tsx`
-**Changes:**
-- Imported `CleanupTrigger` component
-- Added component to layout to run on every page load
+**Note:** The `CleanupTrigger` component is available in `/components/CleanupTrigger.tsx` but is **not enabled by default**. Vercel Cron handles cleanup automatically.
 
 ## User Flows
 
