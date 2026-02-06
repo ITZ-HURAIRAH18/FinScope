@@ -45,7 +45,9 @@ function LoginForm() {
 
       if (result?.error) {
         if (result.error.includes('verify your email')) {
-          setError('Please verify your email before logging in. Check your inbox for the verification link.');
+          // Redirect to OTP verification page
+          router.push(`/auth/verify-otp?email=${encodeURIComponent(email)}`);
+          return;
         } else {
           setError('Invalid email or password');
         }

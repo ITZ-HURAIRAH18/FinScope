@@ -14,12 +14,33 @@ function VerifyEmailForm() {
   const [success, setSuccess] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isResending, setIsResending] = useState(false);
+  const [timeLeft, setTimeLeft] = useState(600); // 10 minutes in seconds
 
   useEffect(() => {
     if (!email) {
       router.push('/auth/register');
     }
   }, [email, router]);
+
+  // Countdown timer
+  useEffect(() => {
+    if (timeLeft <= 0) {
+      setError('Your verification time has expired. Your account has been deleted. Please register again.');
+      return;
+    }
+
+    const timer = setInterval(() => {
+      setTimeLeft((prev) => prev - 1);
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [timeLeft]);
+
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
 
   const handleChange = (index: number, value: string) => {
     if (value.length > 1) return;
@@ -109,6 +130,7 @@ function VerifyEmailForm() {
 
       setSuccess('New OTP sent to your email!');
       setOtp(['', '', '', '', '', '']);
+      setTimeLeft(600); // Reset timer
       setIsResending(false);
     } catch (error) {
       setError('Something went wrong');
@@ -140,6 +162,13 @@ function VerifyEmailForm() {
               We&apos;ve sent a 6-digit code to<br />
               <span className="text-white font-semibold">{email}</span>
             </p>
+          </div>
+
+          {/* Timer */}
+          <div className="mb-6 p-4 bg-blue-500/10 border border-blue-500/50 rounded-lg text-center">
+            <p className="text-blue-400 text-sm mb-1">Time remaining</p>
+            <p className="text-white text-2xl font-bold font-mono">{formatTime(timeLeft)}</p>
+            <p className="text-gray-400 text-xs mt-1">Account will be deleted if not verified</p>
           </div>
 
           {success && (
@@ -176,7 +205,7 @@ function VerifyEmailForm() {
 
             <button
               type="submit"
-              disabled={isLoading || otp.join('').length !== 6}
+              disabled={isLoading || otp.join('').length !== 6 || timeLeft <= 0}
               className="w-full px-6 py-3 bg-gradient-to-r from-red-600 via-red-500 to-pink-500 rounded-lg text-white font-semibold hover:shadow-lg hover:shadow-red-500/50 transition transform hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
             >
               {isLoading ? 'Verifying...' : 'Verify Email'}
@@ -189,7 +218,7 @@ function VerifyEmailForm() {
               Didn&apos;t receive the code?{' '}
               <button
                 onClick={handleResend}
-                disabled={isResending}
+                disabled={isResending || timeLeft <= 0}
                 className="text-red-400 hover:text-red-300 transition font-semibold disabled:opacity-50"
               >
                 {isResending ? 'Sending...' : 'Resend OTP'}
