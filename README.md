@@ -29,9 +29,12 @@ Built with **Next.js 15**, **TypeScript**, **Redux Toolkit**, **Prisma**, and **
 
 ### 🔐 User Features
 - **Secure Authentication** - NextAuth.js with credential and OAuth support
+- **Email Verification with OTP** - 6-digit OTP code sent via email for account verification
+- **Auto-Cleanup System** - Unverified accounts automatically deleted after 10 minutes
 - **User Profiles** - Personalized profile management with Cloudinary integration
 - **Protected Routes** - Middleware-based authentication
 - **Session Management** - Persistent login sessions
+- **Password Security** - bcryptjs hashing with salt rounds
 
 ### 🎨 UI/UX
 - **Glassmorphism Design** - Modern, sleek dark theme
@@ -58,6 +61,8 @@ Built with **Next.js 15**, **TypeScript**, **Redux Toolkit**, **Prisma**, and **
 - **[PostgreSQL](https://www.postgresql.org/)** - Relational database
 - **[NextAuth.js](https://next-auth.js.org/)** - Authentication solution
 - **[bcryptjs](https://github.com/dcodeIO/bcrypt.js)** - Password hashing
+- **[Nodemailer](https://nodemailer.com/)** - Email service for OTP verification
+- **[Vercel Cron Jobs](https://vercel.com/docs/cron-jobs)** - Scheduled tasks for cleanup
 
 ### Real-Time Data & Integrations
 - **[Binance WebSocket API](https://binance-docs.github.io/apidocs/spot/en/)** - Real-time crypto prices
@@ -76,7 +81,9 @@ Built with **Next.js 15**, **TypeScript**, **Redux Toolkit**, **Prisma**, and **
 │   │
 │   ├── auth/                    # Authentication
 │   │   ├── login/              # Login page
-│   │   └── register/           # Registration page
+│   │   ├── register/           # Registration page
+│   │   ├── verify-email/       # Email verification with OTP
+│   │   └── verify-otp/         # OTP verification for login
 │   │
 │   ├── dashboard/              # Markets Dashboard
 │   │   └── page.tsx           # Main dashboard with real-time data
@@ -104,6 +111,11 @@ Built with **Next.js 15**, **TypeScript**, **Redux Toolkit**, **Prisma**, and **
 │   │
 │   └── api/                   # API Routes
 │       ├── auth/             # Authentication endpoints
+│       │   ├── [...nextauth]/  # NextAuth handler
+│       │   ├── register/       # User registration
+│       │   └── verify-email/   # Email verification with OTP
+│       ├── cron/             # Scheduled tasks
+│       │   └── cleanup-unverified/  # Auto-delete unverified users
 │       ├── portfolio/        # Portfolio CRUD
 │       ├── trade/           # Buy/sell endpoints
 │       ├── watchlist/       # Watchlist management
@@ -113,6 +125,7 @@ Built with **Next.js 15**, **TypeScript**, **Redux Toolkit**, **Prisma**, and **
 ├── components/                # React Components
 │   ├── Header.tsx           # Navigation header
 │   ├── LoadingScreen.tsx    # Loading states
+│   ├── CleanupTrigger.tsx   # Auto-cleanup trigger
 │   │
 │   ├── auth/               # Auth components
 │   │   ├── AuthButton.tsx
@@ -149,6 +162,7 @@ Built with **Next.js 15**, **TypeScript**, **Redux Toolkit**, **Prisma**, and **
 ├── lib/                    # Utility Libraries
 │   ├── auth.ts           # NextAuth configuration
 │   ├── prisma.ts         # Prisma client
+│   ├── email.ts          # Email service (OTP sending)
 │   ├── binance-websocket.ts  # Binance WS client
 │   ├── finnhub-websocket.ts  # Finnhub WS client
 │   ├── cloudinary.ts     # Cloudinary config
@@ -204,11 +218,24 @@ Built with **Next.js 15**, **TypeScript**, **Redux Toolkit**, **Prisma**, and **
    FINNHUB_API_KEY="your-finnhub-api-key"
    NEXT_PUBLIC_FINNHUB_API_KEY="your-finnhub-api-key"
 
+   # Email (for OTP verification)
+   EMAIL_HOST="smtp.gmail.com"
+   EMAIL_PORT="587"
+   EMAIL_USER="your-email@gmail.com"
+   EMAIL_PASSWORD="your-app-password"
+
+   # Cron Job Secret (for cleanup)
+   CRON_SECRET="your-random-secret"  # Generate: node generate-secrets.js
+
    # Cloudinary (Optional - for profile images)
    NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME="your-cloud-name"
    CLOUDINARY_API_KEY="your-api-key"
    CLOUDINARY_API_SECRET="your-api-secret"
    ```
+
+   > **Quick Setup**: Run `node generate-secrets.js` to generate `CRON_SECRET` and `NEXTAUTH_SECRET`
+   > 
+   > **Email Setup**: For Gmail, enable 2FA and create an App Password at [myaccount.google.com/apppasswords](https://myaccount.google.com/apppasswords)
 
 4. **Set up the database**
    ```bash
@@ -234,9 +261,11 @@ Built with **Next.js 15**, **TypeScript**, **Redux Toolkit**, **Prisma**, and **
 ### First Time Setup
 
 1. **Register an account** at `/auth/register`
-2. **Login** with your credentials
-3. You'll start with **$100,000** virtual balance
-4. Explore the dashboard and start trading!
+2. **Verify your email** - Check your inbox for a 6-digit OTP code
+3. **Enter the OTP** on the verification page (you have 10 minutes)
+4. **Login** with your verified credentials
+5. You'll start with **$100,000** virtual balance
+6. Explore the dashboard and start trading!
 
 ## 🎯 Usage Guide
 
@@ -386,10 +415,47 @@ Built with **Next.js 15**, **TypeScript**, **Redux Toolkit**, **Prisma**, and **
 
 ### 🔐 Authentication
 - **Credential login** - Email and password
+- **Email verification** - OTP-based email verification system
+  - 6-digit OTP sent via email
+  - 10-minute expiration time
+  - Countdown timer on verification page
+  - Resend OTP functionality
+  - Auto-delete unverified accounts after expiration
 - **Secure registration** - Password hashing with bcryptjs
 - **Session management** - Persistent authentication
 - **Protected routes** - Middleware-based protection
 - **Profile dropdown** - Quick access to account features
+
+## 📧 Email Verification System
+
+FinScope includes a robust email verification system to ensure account security:
+
+### How It Works
+1. **Registration** - User creates account with email and password
+2. **OTP Generation** - System generates a random 6-digit code
+3. **Email Delivery** - OTP sent via Nodemailer (SMTP)
+4. **Verification Page** - User enters code within 10 minutes
+5. **Account Activation** - Email verified, user can login
+6. **Auto-Cleanup** - Unverified accounts deleted after 10 minutes
+
+### Features
+- ✅ **6-Digit OTP** - Secure random code generation
+- ✅ **10-Minute Expiry** - Time-limited verification
+- ✅ **Countdown Timer** - Visual timer on verification page
+- ✅ **Resend Functionality** - Request new OTP if needed
+- ✅ **Email Templates** - Professional HTML emails
+- ✅ **Auto-Cleanup** - Scheduled deletion of expired accounts
+- ✅ **Login Protection** - Unverified users redirected to OTP page
+
+### Technical Implementation
+- **Email Service**: Nodemailer with SMTP (Gmail, Outlook, etc.)
+- **OTP Storage**: Database field `emailVerificationToken`
+- **Expiry Tracking**: `tokenExpires` timestamp field
+- **Cleanup Method**: Vercel Cron Jobs + Client-side trigger
+- **Security**: bcrypt hashing, secure session management
+
+### Setup Requirements
+See `QUICK_SETUP.md` for detailed email configuration instructions.
 
 ## 🗄️ Database Schema
 
@@ -723,6 +789,16 @@ If you find this project helpful, please consider:
 - **Assets Available**: 30+ cryptocurrencies, dozens of stocks
 - **Authentication**: Secure with NextAuth.js
 - **Deployment Ready**: Optimized for Vercel/Railway/Netlify
+
+## 📚 Documentation
+
+Comprehensive guides are available in the repository:
+
+- **[QUICK_SETUP.md](QUICK_SETUP.md)** - Quick start guide with step-by-step setup
+- **[EMAIL_VERIFICATION_SETUP.md](EMAIL_VERIFICATION_SETUP.md)** - Detailed email verification configuration
+- **[VERCEL_HOBBY_FIX.md](VERCEL_HOBBY_FIX.md)** - Vercel free plan compatibility guide
+- **[IMPLEMENTATION_SUMMARY.md](IMPLEMENTATION_SUMMARY.md)** - Technical implementation details
+- **[BUILD_FIX.md](BUILD_FIX.md)** - Build error troubleshooting
 
 ---
 
