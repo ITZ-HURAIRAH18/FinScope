@@ -16,7 +16,7 @@ export default function OTPVerification({ email, mode = 'signup' }: OTPVerificat
   const [success, setSuccess] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isResending, setIsResending] = useState(false);
-  const [timeLeft, setTimeLeft] = useState(600); // 10 minutes in seconds
+  const [timeLeft, setTimeLeft] = useState<number | null>(null); // Will be set from database
   const [isFetchingTime, setIsFetchingTime] = useState(true);
 
   // Fetch actual remaining time from database on mount
@@ -45,8 +45,13 @@ export default function OTPVerification({ email, mode = 'signup' }: OTPVerificat
     fetchRemainingTime();
   }, [email]);
 
-  // Countdown timer
+  // Countdown timer - only start after fetching initial time
   useEffect(() => {
+    // Don't start countdown until we've fetched the actual time
+    if (isFetchingTime || timeLeft === null) {
+      return;
+    }
+
     if (timeLeft <= 0) {
       if (mode === 'signup') {
         setError('Your verification time has expired. Your account has been deleted. Please register again.');
@@ -57,13 +62,14 @@ export default function OTPVerification({ email, mode = 'signup' }: OTPVerificat
     }
 
     const timer = setInterval(() => {
-      setTimeLeft((prev) => prev - 1);
+      setTimeLeft((prev) => (prev !== null && prev > 0 ? prev - 1 : 0));
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [timeLeft, mode]);
+  }, [timeLeft, mode, isFetchingTime]);
 
-  const formatTime = (seconds: number) => {
+  const formatTime = (seconds: number | null) => {
+    if (seconds === null) return '--:--';
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${mins}:${secs.toString().padStart(2, '0')}`;
@@ -206,7 +212,11 @@ export default function OTPVerification({ email, mode = 'signup' }: OTPVerificat
           {/* Timer */}
           <div className="mb-6 text-center">
             <p className="text-gray-400 text-sm">
-              Time remaining: <span className="text-red-400 font-mono font-semibold">{formatTime(timeLeft)}</span>
+              Time remaining: {isFetchingTime ? (
+                <span className="text-gray-400 font-mono font-semibold">Loading...</span>
+              ) : (
+                <span className="text-red-400 font-mono font-semibold">{formatTime(timeLeft)}</span>
+              )}
             </p>
             {mode === 'signup' && (
               <p className="text-gray-500 text-xs mt-1">Account will be deleted if not verified</p>
@@ -247,7 +257,7 @@ export default function OTPVerification({ email, mode = 'signup' }: OTPVerificat
 
             <button
               type="submit"
-              disabled={isLoading || otp.join('').length !== 6 || timeLeft <= 0}
+              disabled={isLoading || otp.join('').length !== 6 || timeLeft === null || timeLeft <= 0}
               className="w-full px-6 py-3 bg-gradient-to-r from-red-600 via-red-500 to-pink-500 rounded-lg text-white font-semibold hover:shadow-lg hover:shadow-red-500/50 transition transform hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
             >
               {isLoading ? 'Verifying...' : 'Verify Email'}
@@ -260,7 +270,7 @@ export default function OTPVerification({ email, mode = 'signup' }: OTPVerificat
               Didn&apos;t receive the code?{' '}
               <button
                 onClick={handleResend}
-                disabled={isResending || timeLeft <= 0}
+                disabled={isResending || timeLeft === null || timeLeft <= 0}
                 className="text-red-400 hover:text-red-300 transition font-semibold disabled:opacity-50"
               >
                 {isResending ? 'Sending...' : 'Resend OTP'}
