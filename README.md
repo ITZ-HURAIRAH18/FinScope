@@ -126,6 +126,7 @@ Built with **Next.js 15**, **TypeScript**, **Redux Toolkit**, **Prisma**, and **
 │   ├── Header.tsx           # Navigation header
 │   ├── LoadingScreen.tsx    # Loading states
 │   ├── CleanupTrigger.tsx   # Auto-cleanup trigger
+│   ├── OTPVerification.tsx  # Reusable OTP verification component
 │   │
 │   ├── auth/               # Auth components
 │   │   ├── AuthButton.tsx
@@ -415,10 +416,12 @@ Built with **Next.js 15**, **TypeScript**, **Redux Toolkit**, **Prisma**, and **
 
 ### 🔐 Authentication
 - **Credential login** - Email and password
-- **Email verification** - OTP-based email verification system
+- **Email verification** - Unified OTP-based email verification system
+  - Premium 6-box OTP input design
+  - Used for both signup and login verification
   - 6-digit OTP sent via email
   - 10-minute expiration time
-  - Countdown timer on verification page
+  - Clean countdown timer display
   - Resend OTP functionality
   - Auto-delete unverified accounts after expiration
 - **Secure registration** - Password hashing with bcryptjs
@@ -440,12 +443,15 @@ FinScope includes a robust email verification system to ensure account security:
 
 ### Features
 - ✅ **6-Digit OTP** - Secure random code generation
+- ✅ **Premium 6-Box Input** - Beautiful individual input boxes with auto-focus
+- ✅ **Unified Component** - Same component for signup and login flows
 - ✅ **10-Minute Expiry** - Time-limited verification
-- ✅ **Countdown Timer** - Visual timer on verification page
+- ✅ **Clean Timer Display** - Minimal countdown timer
 - ✅ **Resend Functionality** - Request new OTP if needed
 - ✅ **Email Templates** - Professional HTML emails
 - ✅ **Auto-Cleanup** - Scheduled deletion of expired accounts
 - ✅ **Login Protection** - Unverified users redirected to OTP page
+- ✅ **Paste Support** - Copy-paste OTP codes directly
 
 ### Technical Implementation
 - **Email Service**: Nodemailer with SMTP (Gmail, Outlook, etc.)
@@ -799,6 +805,8 @@ Comprehensive guides are available in the repository:
 - **[VERCEL_HOBBY_FIX.md](VERCEL_HOBBY_FIX.md)** - Vercel free plan compatibility guide
 - **[IMPLEMENTATION_SUMMARY.md](IMPLEMENTATION_SUMMARY.md)** - Technical implementation details
 - **[BUILD_FIX.md](BUILD_FIX.md)** - Build error troubleshooting
+- **[OTP_UNIFICATION.md](OTP_UNIFICATION.md)** - OTP verification component architecture
+
 
 ---
 
