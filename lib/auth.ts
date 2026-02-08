@@ -1,5 +1,6 @@
 import { NextAuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
+import GoogleProvider from 'next-auth/providers/google';
 import { PrismaAdapter } from '@next-auth/prisma-adapter';
 import { prisma } from './prisma';
 import bcrypt from 'bcryptjs';
@@ -7,6 +8,10 @@ import bcrypt from 'bcryptjs';
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma),
   providers: [
+    GoogleProvider({
+      clientId: process.env.GOOGLE_CLIENT_ID as string,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET as string,
+    }),
     CredentialsProvider({
       name: 'credentials',
       credentials: {
@@ -72,13 +77,84 @@ export const authOptions: NextAuthOptions = {
     },
   },
   callbacks: {
-    async jwt({ token, user, trigger }) {
+    async signIn({ user, account, profile }) {
+      // For OAuth providers (Google), handle account linking
+      if (account?.provider === 'google') {
+        // Check if user with this email already exists
+        const existingUser = await prisma.user.findUnique({
+          where: { email: user.email! },
+          include: { accounts: true },
+        });
+
+        if (existingUser) {
+          // Check if this Google account is already linked
+          const isAlreadyLinked = existingUser.accounts.some(
+            (acc) => acc.provider === 'google' && acc.providerAccountId === account.providerAccountId
+          );
+
+          if (!isAlreadyLinked) {
+            // Link the Google account to the existing user
+            await prisma.account.create({
+              data: {
+                userId: existingUser.id,
+                type: account.type,
+                provider: account.provider,
+                providerAccountId: account.providerAccountId,
+                access_token: account.access_token,
+                expires_at: account.expires_at,
+                token_type: account.token_type,
+                scope: account.scope,
+                id_token: account.id_token,
+                refresh_token: account.refresh_token,
+              },
+            });
+
+            // Mark email as verified if signing in with Google
+            if (!existingUser.emailVerified) {
+              await prisma.user.update({
+                where: { id: existingUser.id },
+                data: { emailVerified: new Date() },
+              });
+            }
+          }
+        }
+        
+        return true;
+      }
+      
+      // For credentials provider, check if email is verified
+      if (account?.provider === 'credentials') {
+        const existingUser = await prisma.user.findUnique({
+          where: { email: user.email! },
+        });
+        
+        if (existingUser && !existingUser.emailVerified) {
+          return false;
+        }
+      }
+      
+      return true;
+    },
+    async jwt({ token, user, trigger, account }) {
       // Initial sign in - store all user data including image URL
       if (user) {
         token.id = user.id;
         token.email = user.email;
         token.name = user.name;
         token.image = user.image;
+        
+        // For OAuth providers, ensure user gets default balance
+        if (account?.provider === 'google') {
+          const dbUser = await prisma.user.findUnique({
+            where: { email: user.email! },
+          });
+          if (dbUser && dbUser.balance === undefined) {
+            await prisma.user.update({
+              where: { id: dbUser.id },
+              data: { balance: 100000.00 },
+            });
+          }
+        }
       }
 
       // Handle session update trigger (when profile is updated)
