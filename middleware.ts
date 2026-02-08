@@ -7,7 +7,11 @@ export default withAuth(
   },
   {
     callbacks: {
-      authorized: ({ token }) => !!token,
+      authorized: ({ token, req }) => {
+        // Allow access if token exists
+        if (token) return true;
+        return false;
+      },
     },
     pages: {
       signIn: '/auth/login',

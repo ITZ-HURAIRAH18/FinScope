@@ -11,6 +11,13 @@ export const authOptions: NextAuthOptions = {
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID as string,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET as string,
+      authorization: {
+        params: {
+          prompt: "consent",
+          access_type: "offline",
+          response_type: "code"
+        }
+      }
     }),
     CredentialsProvider({
       name: 'credentials',
@@ -64,17 +71,6 @@ export const authOptions: NextAuthOptions = {
   session: {
     strategy: 'jwt',
     maxAge: 30 * 24 * 60 * 60, // 30 days
-  },
-  cookies: {
-    sessionToken: {
-      name: `next-auth.session-token`,
-      options: {
-        httpOnly: true,
-        sameSite: 'lax',
-        path: '/',
-        secure: process.env.NODE_ENV === 'production',
-      },
-    },
   },
   callbacks: {
     async signIn({ user, account, profile }) {
@@ -148,11 +144,16 @@ export const authOptions: NextAuthOptions = {
           const dbUser = await prisma.user.findUnique({
             where: { email: user.email! },
           });
-          if (dbUser && dbUser.balance === undefined) {
-            await prisma.user.update({
-              where: { id: dbUser.id },
-              data: { balance: 100000.00 },
-            });
+          if (dbUser) {
+            // Ensure token has the database user ID
+            token.id = dbUser.id;
+            
+            if (dbUser.balance === null || dbUser.balance === undefined) {
+              await prisma.user.update({
+                where: { id: dbUser.id },
+                data: { balance: 100000.00 },
+              });
+            }
           }
         }
       }
@@ -166,6 +167,7 @@ export const authOptions: NextAuthOptions = {
         });
 
         if (updatedUser) {
+          token.id = updatedUser.id;
           token.name = updatedUser.name;
           token.image = updatedUser.image;
         }
@@ -186,4 +188,6 @@ export const authOptions: NextAuthOptions = {
   },
   secret: process.env.NEXTAUTH_SECRET,
   debug: process.env.NODE_ENV === 'development',
+  useSecureCookies: process.env.NODE_ENV === 'production',
+  trustHost: true,
 };

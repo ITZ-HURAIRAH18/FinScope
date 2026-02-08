@@ -22,9 +22,8 @@ export function Providers({ children }: { children: React.ReactNode }) {
   return (
     <Provider store={store}>
       <SessionProvider 
-        refetchInterval={5 * 60} 
+        refetchInterval={0}
         refetchOnWindowFocus={true}
-        basePath="/api/auth"
       >
         <QueryClientProvider client={queryClient}>
           {children}
