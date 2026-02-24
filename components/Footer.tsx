@@ -11,7 +11,7 @@ export default function Footer() {
             rel="noopener noreferrer"
             className="gradient-text font-semibold hover:opacity-80 transition-opacity"
           >
-            M Abu Hurairah
+            M Abu Hurairah & Ali Riaz
           </a>
         </p>
       </div>
