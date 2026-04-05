@@ -1,7 +1,8 @@
 "use client";
 
 import { useSession } from 'next-auth/react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { Star, Loader2 } from 'lucide-react';
 
 interface WatchlistButtonProps {
   symbol: string;
@@ -13,6 +14,28 @@ export default function WatchlistButton({ symbol, type, meta }: WatchlistButtonP
   const { data: session } = useSession();
   const [isInWatchlist, setIsInWatchlist] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+
+  // Fetch watchlist status on mount
+  useEffect(() => {
+    if (!session?.user) return;
+
+    const checkWatchlistStatus = async () => {
+      try {
+        const response = await fetch('/api/watchlist');
+        if (response.ok) {
+          const watchlist = await response.json();
+          const exists = watchlist.some(
+            (item: any) => item.symbol === symbol && item.type === type
+          );
+          setIsInWatchlist(exists);
+        }
+      } catch (error) {
+        console.error('Failed to check watchlist status:', error);
+      }
+    };
+
+    checkWatchlistStatus();
+  }, [session?.user, symbol, type]);
 
   const handleToggle = async () => {
     if (!session?.user) {
@@ -39,7 +62,7 @@ export default function WatchlistButton({ symbol, type, meta }: WatchlistButtonP
           body: JSON.stringify({
             symbol,
             type,
-meta: meta || {},
+            meta: meta || {},
           }),
         });
         setIsInWatchlist(true);
@@ -55,13 +78,20 @@ meta: meta || {},
     <button
       onClick={handleToggle}
       disabled={isLoading}
-      className={`px-6 py-3 rounded-lg font-semibold transition transform hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed ${
+      className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-sm transition-all duration-200 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 ${
         isInWatchlist
-          ? 'bg-red-500/20 border border-red-500 text-red-400 hover:bg-red-500/30'
-          : 'bg-blue-500/20 border border-blue-500 text-blue-400 hover:bg-blue-500/30'
+          ? 'bg-yellow-500/10 border border-yellow-500/30 text-yellow-400 hover:bg-yellow-500/20 hover:border-yellow-500/50'
+          : 'bg-primary/10 border border-primary/30 text-primary hover:bg-primary/20 hover:border-primary/50'
       }`}
     >
-      {isLoading ? '...' : isInWatchlist ? '⭐ Remove from Watchlist' : '⭐ Add to Watchlist'}
+      {isLoading ? (
+        <Loader2 className="w-4 h-4 animate-spin" />
+      ) : (
+        <>
+          <Star className={`w-4 h-4 ${isInWatchlist ? 'fill-current' : ''}`} />
+          <span>{isInWatchlist ? 'Remove' : 'Add to Watchlist'}</span>
+        </>
+      )}
     </button>
   );
 }

@@ -5,7 +5,11 @@ import { Providers } from "./providers";
 import Footer from "@/components/Footer";
 import CleanupTrigger from "@/components/CleanupTrigger";
 
-const inter = Inter({ subsets: ["latin"] });
+const inter = Inter({ 
+  subsets: ["latin"],
+  variable: "--font-inter",
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   title: "FinScope - Real-Time Crypto & Stock Analytics",
@@ -20,7 +24,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className="dark">
-      <body className={inter.className}>
+      <body className={`${inter.variable} ${inter.className} antialiased`}>
         <Providers>
           <CleanupTrigger />
           {children}

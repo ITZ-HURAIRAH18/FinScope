@@ -10,13 +10,12 @@ interface CryptoIconProps {
 export default function CryptoIcon({ symbol, className = "w-8 h-8" }: CryptoIconProps) {
   const [iconError, setIconError] = useState<number>(0);
   const [showFallback, setShowFallback] = useState(false);
-  
+
   const iconSources = [
     `https://assets.coincap.io/assets/icons/${symbol.toLowerCase()}@2x.png`,
     `https://cryptologos.cc/logos/${symbol.toLowerCase()}-${symbol.toLowerCase()}-logo.png`,
     `https://s2.coinmarketcap.com/static/img/coins/64x64/${symbol.toLowerCase()}.png`,
-    // Specific override for ORDI if known, otherwise generic sources might catch it if updated
-    `https://icons.llamao.fi/icons/tokens/0/${symbol.toLowerCase()}?h=60&w=60`, // generic defillama source often has many tokens
+    `https://icons.llamao.fi/icons/tokens/0/${symbol.toLowerCase()}?h=60&w=60`,
   ];
 
   const handleImageError = () => {
@@ -30,10 +29,10 @@ export default function CryptoIcon({ symbol, className = "w-8 h-8" }: CryptoIcon
   if (showFallback) {
     return (
       <div
-        className={`${className} flex bg-gradient-to-r from-red-600 via-red-500 to-pink-500 rounded-full items-center justify-center`}
+        className={`${className} flex bg-card border border-card-border rounded-md items-center justify-center`}
       >
-        <span className="text-white font-bold text-sm">
-          {symbol.substring(0, 1)}
+        <span className="text-primary font-semibold text-xs">
+          {symbol.substring(0, 2)}
         </span>
       </div>
     );
@@ -43,7 +42,7 @@ export default function CryptoIcon({ symbol, className = "w-8 h-8" }: CryptoIcon
     <img
       src={iconSources[iconError]}
       alt={symbol}
-      className={`${className} rounded-full`}
+      className={`${className} rounded-md`}
       onError={handleImageError}
     />
   );

@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Header from "@/components/Header";
 import NewsCard from "@/components/news/NewsCard";
 import { NewsArticle } from "@/types/news";
+import { Button, Card, CardContent } from "@/components/ui";
 
 type CategoryType = "general" | "crypto" | "stock";
 
@@ -28,9 +29,9 @@ function NewsContent() {
     try {
       setLoading(true);
       setError(null);
-      
+
       const response = await fetch(`/api/news?category=${category}&limit=50`);
-      
+
       if (!response.ok) {
         throw new Error("Failed to fetch news");
       }
@@ -46,9 +47,9 @@ function NewsContent() {
   };
 
   const categories = [
-    { id: "general" as CategoryType, label: "All News", icon: "📰" },
-    { id: "crypto" as CategoryType, label: "Crypto", icon: "₿" },
-    { id: "stock" as CategoryType, label: "Stock", icon: "📈" },
+    { id: "general" as CategoryType, label: "All News" },
+    { id: "crypto" as CategoryType, label: "Crypto" },
+    { id: "stock" as CategoryType, label: "Stock" },
   ];
 
   const handleCategoryChange = (category: CategoryType) => {
@@ -56,102 +57,89 @@ function NewsContent() {
   };
 
   return (
-    <main className="min-h-screen bg-black">
-      {/* Header */}
+    <main className="min-h-screen bg-background">
       <Header activePage="news" />
 
-      {/* Hero Section */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 pb-12">
-        <div className="text-center space-y-6">
-          <h1 className="text-5xl md:text-6xl font-bold text-white">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        {/* Page Header */}
+        <div className="mb-6 animate-fade-in">
+          <h1 className="text-2xl font-semibold text-foreground tracking-tight">
             Latest Market News
           </h1>
-          <p className="text-xl text-gray-300 max-w-3xl mx-auto">
+          <p className="text-sm text-muted-foreground mt-0.5">
             Stay updated with the latest cryptocurrency, stock, and financial market news
           </p>
         </div>
-      </section>
 
-      {/* Category Filter */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-8">
-        <div className="flex flex-wrap justify-center gap-4">
-          {categories.map((category) => (
-            <button
-              key={category.id}
-              onClick={() => handleCategoryChange(category.id)}
-              className={`px-6 py-3 rounded-full font-semibold transition-all duration-300 ${
-                activeCategory === category.id
-                  ? "bg-gradient-to-r from-red-600 via-red-500 to-pink-500 text-white shadow-lg shadow-red-500/50"
-                  : "glass-card text-gray-300 hover:text-white hover:shadow-lg"
-              }`}
-            >
-              <span className="mr-2">{category.icon}</span>
-              {category.label}
-            </button>
-          ))}
-        </div>
-      </section>
+        {/* Category Filter */}
+        <Card className="mb-6 animate-slide-up">
+          <CardContent className="py-3">
+            <div className="flex flex-wrap gap-2">
+              {categories.map((category) => (
+                <button
+                  key={category.id}
+                  onClick={() => handleCategoryChange(category.id)}
+                  className={`px-4 py-2 rounded-md text-sm font-medium transition-all duration-150 ${
+                    activeCategory === category.id
+                      ? "bg-primary text-primary-foreground shadow-subtle"
+                      : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
+                  }`}
+                >
+                  {category.label}
+                </button>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
 
-      {/* News Grid */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-20">
+        {/* News Grid */}
         {loading ? (
-          // Loading Skeleton
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {[...Array(6)].map((_, index) => (
-              <div
-                key={index}
-                className="glass-card rounded-2xl overflow-hidden animate-pulse"
-              >
-                <div className="w-full h-48 bg-gray-700"></div>
-                <div className="p-6 space-y-3">
-                  <div className="h-4 bg-gray-700 rounded w-1/3"></div>
-                  <div className="h-6 bg-gray-700 rounded w-full"></div>
-                  <div className="h-6 bg-gray-700 rounded w-5/6"></div>
-                  <div className="h-4 bg-gray-700 rounded w-full"></div>
-                  <div className="h-4 bg-gray-700 rounded w-4/5"></div>
+              <Card key={index} className="rounded-lg overflow-hidden animate-pulse">
+                <div className="w-full h-44 bg-secondary"></div>
+                <div className="p-4 space-y-3">
+                  <div className="h-3 bg-secondary rounded w-1/3"></div>
+                  <div className="h-4 bg-secondary rounded w-full"></div>
+                  <div className="h-4 bg-secondary rounded w-5/6"></div>
+                  <div className="h-3 bg-secondary rounded w-full"></div>
                 </div>
-              </div>
+              </Card>
             ))}
           </div>
         ) : error ? (
-          // Error State
-          <div className="text-center py-20">
-            <div className="glass-card inline-block p-8 rounded-2xl">
-              <span className="text-6xl mb-4 block">⚠️</span>
-              <h3 className="text-2xl font-bold text-white mb-2">
-                Oops! Something went wrong
-              </h3>
-              <p className="text-gray-400 mb-6">{error}</p>
-              <button
-                onClick={() => fetchNews(activeCategory)}
-                className="px-6 py-3 bg-gradient-to-r from-red-600 via-red-500 to-pink-500 rounded-lg text-white font-semibold hover:shadow-lg hover:shadow-red-500/50 transition"
-              >
+          <Card className="rounded-lg">
+            <CardContent className="py-16 text-center">
+              <svg className="w-12 h-12 mx-auto mb-4 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
+              </svg>
+              <h3 className="text-sm font-medium text-foreground mb-1">Something went wrong</h3>
+              <p className="text-xs text-muted-foreground mb-5">{error}</p>
+              <Button variant="primary" size="sm" onClick={() => fetchNews(activeCategory)}>
                 Try Again
-              </button>
-            </div>
-          </div>
+              </Button>
+            </CardContent>
+          </Card>
         ) : articles.length === 0 ? (
-          // Empty State
-          <div className="text-center py-20">
-            <div className="glass-card inline-block p-8 rounded-2xl">
-              <span className="text-6xl mb-4 block">📭</span>
-              <h3 className="text-2xl font-bold text-white mb-2">
-                No news available
-              </h3>
-              <p className="text-gray-400">
-                Check back later for the latest market updates
-              </p>
-            </div>
-          </div>
+          <Card className="rounded-lg">
+            <CardContent className="py-16 text-center">
+              <svg className="w-12 h-12 mx-auto mb-4 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+              </svg>
+              <h3 className="text-sm font-medium text-foreground mb-1">No news available</h3>
+              <p className="text-xs text-muted-foreground">Check back later for the latest market updates</p>
+            </CardContent>
+          </Card>
         ) : (
-          // News Grid
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {articles.map((article) => (
-              <NewsCard key={article.id} article={article} />
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {articles.map((article, index) => (
+              <div key={article.id} className={`animate-fade-in`} style={{ animationDelay: `${Math.min(index * 50, 300)}ms` }}>
+                <NewsCard article={article} />
+              </div>
             ))}
           </div>
         )}
-      </section>
+      </div>
     </main>
   );
 }
@@ -159,37 +147,31 @@ function NewsContent() {
 export default function NewsPage() {
   return (
     <Suspense fallback={
-      <main className="min-h-screen bg-black">
+      <main className="min-h-screen bg-background">
         <Header activePage="news" />
-        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 pb-12">
-          <div className="text-center space-y-6">
-            <h1 className="text-5xl md:text-6xl font-bold text-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          <div className="mb-6">
+            <h1 className="text-2xl font-semibold text-foreground tracking-tight">
               Latest Market News
             </h1>
-            <p className="text-xl text-gray-300 max-w-3xl mx-auto">
+            <p className="text-sm text-muted-foreground mt-0.5">
               Stay updated with the latest cryptocurrency, stock, and financial market news
             </p>
           </div>
-        </section>
-        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-20">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {[...Array(6)].map((_, index) => (
-              <div
-                key={index}
-                className="glass-card rounded-2xl overflow-hidden animate-pulse"
-              >
-                <div className="w-full h-48 bg-gray-700"></div>
-                <div className="p-6 space-y-3">
-                  <div className="h-4 bg-gray-700 rounded w-1/3"></div>
-                  <div className="h-6 bg-gray-700 rounded w-full"></div>
-                  <div className="h-6 bg-gray-700 rounded w-5/6"></div>
-                  <div className="h-4 bg-gray-700 rounded w-full"></div>
-                  <div className="h-4 bg-gray-700 rounded w-4/5"></div>
+              <Card key={index} className="rounded-lg overflow-hidden animate-pulse">
+                <div className="w-full h-44 bg-secondary"></div>
+                <div className="p-4 space-y-3">
+                  <div className="h-3 bg-secondary rounded w-1/3"></div>
+                  <div className="h-4 bg-secondary rounded w-full"></div>
+                  <div className="h-4 bg-secondary rounded w-5/6"></div>
+                  <div className="h-3 bg-secondary rounded w-full"></div>
                 </div>
-              </div>
+              </Card>
             ))}
           </div>
-        </section>
+        </div>
       </main>
     }>
       <NewsContent />

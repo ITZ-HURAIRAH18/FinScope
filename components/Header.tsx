@@ -13,12 +13,10 @@ export default function Header({ activePage = "home" }: HeaderProps) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const pathname = usePathname();
 
-  // Close mobile menu when route changes
   useEffect(() => {
     setIsMobileMenuOpen(false);
   }, [pathname]);
 
-  // Prevent body scroll when mobile menu is open
   useEffect(() => {
     if (isMobileMenuOpen) {
       document.body.style.overflow = "hidden";
@@ -40,108 +38,109 @@ export default function Header({ activePage = "home" }: HeaderProps) {
   ];
 
   return (
-    <header className="border-b border-white/10 backdrop-blur-sm bg-black/20 sticky top-0 z-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-        <div className="flex items-center justify-between">
+    <header className="border-b border-border/60 backdrop-blur-xl bg-background/80 sticky top-0 z-50">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex items-center justify-between h-14">
           {/* Logo */}
-          <Link href="/" className="flex items-center space-x-2">
-            <div className="w-8 h-8 bg-gradient-to-r from-red-600 via-red-500 to-pink-500 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-lg">F</span>
+          <Link href="/" className="flex items-center gap-2.5 group">
+            <div className="w-8 h-8 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center transition-all duration-200 group-hover:bg-primary/20 group-hover:border-primary/40 group-hover:shadow-pink-glow-sm">
+              <svg className="w-4 h-4 text-primary" viewBox="0 0 24 12" fill="currentColor">
+                <path d="M0 11.5L2 9.5L5 10.5L8 6.5L11 8.5L14 3.5L17 5.5L20 1.5L22 2.5L24 0.5V12H0V11.5Z" />
+              </svg>
             </div>
-            <span className="text-2xl font-bold gradient-text">FinScope</span>
+            <span className="text-lg font-semibold tracking-tight text-foreground">
+              finscope
+            </span>
           </Link>
 
           {/* Desktop Navigation */}
-          <nav className="hidden md:flex items-center space-x-6">
+          <nav className="hidden md:flex items-center gap-0.5">
             {navLinks.map((link) => (
               <Link
                 key={link.href}
                 href={link.href}
-                className={`transition ${
+                className={`px-3 py-1.5 text-sm font-medium rounded-md transition-all duration-150 ${
                   activePage === link.page
-                    ? "text-white font-semibold"
-                    : "text-gray-300 hover:text-white"
+                    ? "text-foreground bg-accent"
+                    : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
                 }`}
               >
                 {link.label}
               </Link>
             ))}
-            <AuthButton />
           </nav>
 
-          {/* Mobile Hamburger Button */}
-          <button
-            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            className="md:hidden text-white p-2 hover:bg-white/10 rounded-lg transition"
-            aria-label="Toggle mobile menu"
-          >
-            {isMobileMenuOpen ? (
-              // Close icon (X)
-              <svg
-                className="w-6 h-6"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M6 18L18 6M6 6l12 12"
-                />
-              </svg>
-            ) : (
-              // Hamburger icon
-              <svg
-                className="w-6 h-6"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M4 6h16M4 12h16M4 18h16"
-                />
-              </svg>
-            )}
-          </button>
+          {/* Auth + Mobile Toggle */}
+          <div className="flex items-center gap-2">
+            <div className="hidden md:flex items-center gap-3">
+              {/* Status indicator */}
+              <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                <span className="relative flex h-2 w-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-success opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-success"></span>
+                </span>
+                <span>Live</span>
+              </div>
+              <AuthButton />
+            </div>
+            <button
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              className="md:hidden p-2 text-muted-foreground hover:text-foreground hover:bg-accent rounded-md transition-colors"
+              aria-label="Toggle mobile menu"
+            >
+              {isMobileMenuOpen ? (
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              ) : (
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
+              )}
+            </button>
+          </div>
         </div>
       </div>
 
       {/* Mobile Menu */}
       <div
-        className={`md:hidden transition-all duration-300 ease-in-out ${
+        className={`md:hidden transition-all duration-300 ease-in-out border-t border-border/60 ${
           isMobileMenuOpen
             ? "max-h-screen opacity-100"
             : "max-h-0 opacity-0 overflow-hidden"
         }`}
       >
-        <nav className="px-4 pb-4 space-y-2 bg-black/40 backdrop-blur-md border-t border-white/10">
+        <nav className="px-3 py-3 space-y-1 bg-background/95 backdrop-blur-xl">
           {navLinks.map((link) => (
             <Link
               key={link.href}
               href={link.href}
-              className={`block px-4 py-3 rounded-lg transition ${
+              className={`block px-3 py-2 text-sm font-medium rounded-md transition-colors ${
                 activePage === link.page
-                  ? "bg-red-500 text-white font-semibold"
-                  : "text-gray-300 hover:bg-white/10 hover:text-white"
+                  ? "text-foreground bg-accent"
+                  : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
               }`}
             >
               {link.label}
             </Link>
           ))}
-          <div className="pt-2 border-t border-white/10">
+          <div className="pt-3 mt-3 border-t border-border/60">
+            {/* Mobile status indicator */}
+            <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-3 px-3">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-success opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-success"></span>
+              </span>
+              <span>Live market data</span>
+            </div>
             <AuthButton />
           </div>
         </nav>
       </div>
 
-      {/* Mobile Menu Backdrop */}
       {isMobileMenuOpen && (
         <div
-          className="md:hidden fixed inset-0 bg-black/50 backdrop-blur-sm -z-10"
+          className="md:hidden fixed inset-0 bg-background/60 backdrop-blur-sm -z-10"
           onClick={() => setIsMobileMenuOpen(false)}
         />
       )}

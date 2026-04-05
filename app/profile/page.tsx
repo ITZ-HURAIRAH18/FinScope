@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import Header from "@/components/Header";
 import LoadingScreen from "@/components/LoadingScreen";
+import { Card, CardContent, CardHeader, CardTitle, Button, Input } from "@/components/ui";
 
 export default function ProfilePage() {
   const { data: session, status, update } = useSession();
@@ -17,7 +18,7 @@ export default function ProfilePage() {
     if (status === "unauthenticated") {
       router.push("/auth/login");
     }
-    
+
     if (session?.user) {
       setName(session.user.name || "");
       setPreviewImage(session.user.image || null);
@@ -28,19 +29,16 @@ export default function ProfilePage() {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Validate file size (max 2MB)
     if (file.size > 2 * 1024 * 1024) {
       alert("Image size must be less than 2MB");
       return;
     }
 
-    // Validate file type
     if (!file.type.match(/^image\/(png|jpg|jpeg|gif)$/)) {
       alert("Only PNG, JPG, and GIF images are allowed");
       return;
     }
 
-    // Convert to base64 and show preview
     const reader = new FileReader();
     reader.onloadend = () => {
       setPreviewImage(reader.result as string);
@@ -63,7 +61,6 @@ export default function ProfilePage() {
       });
 
       if (response.ok) {
-        // Trigger session update - NextAuth will fetch fresh data from DB
         await update();
         alert("Profile updated successfully!");
       } else {
@@ -94,106 +91,92 @@ export default function ProfilePage() {
     .substring(0, 2);
 
   return (
-    <main className="min-h-screen bg-black">
-      {/* Header */}
+    <main className="min-h-screen bg-background">
       <Header activePage="profile" />
 
-      {/* Content */}
-      <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         {/* Back Button */}
         <button
           onClick={() => router.back()}
-          className="text-gray-400 hover:text-white transition mb-6 flex items-center"
+          className="text-muted-foreground hover:text-foreground transition mb-6 flex items-center text-sm"
         >
-          ← Back
+          <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
+          </svg>
+          Back
         </button>
 
         {/* Page Title */}
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold text-white mb-2">Profile Settings</h1>
-          <p className="text-gray-400">Manage your account settings and profile picture</p>
+        <div className="mb-6 animate-fade-in">
+          <h1 className="text-2xl font-semibold text-foreground tracking-tight">Profile Settings</h1>
+          <p className="text-sm text-muted-foreground mt-0.5">Manage your account settings and profile picture</p>
         </div>
 
         {/* Profile Form */}
-        <div className="glass-card p-8 rounded-2xl space-y-8">
-          {/* Profile Picture Section */}
-          <div>
-            <label className="block text-white font-semibold mb-4">Profile Picture</label>
-            <div className="flex items-center space-x-6">
-              {/* Avatar Display */}
-              <div className={`w-24 h-24 rounded-full flex items-center justify-center overflow-hidden ${
-                previewImage 
-                  ? 'bg-gray-800' 
-                  : 'bg-gradient-to-r from-red-600 via-red-500 to-pink-500 text-white font-bold text-2xl'
-              }`}>
-                {previewImage ? (
-                  <img 
-                    src={previewImage} 
-                    alt="Profile"
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <span className="text-white font-bold text-2xl">{userInitials}</span>
-                )}
-              </div>
+        <Card className="animate-slide-up">
+          <CardContent className="py-5 space-y-5">
+            {/* Profile Picture Section */}
+            <div>
+              <label className="block text-sm font-medium text-foreground mb-3">Profile Picture</label>
+              <div className="flex items-center gap-4">
+                <div className={`w-16 h-16 rounded-md flex items-center justify-center overflow-hidden shrink-0 ${
+                  previewImage
+                    ? 'bg-secondary'
+                    : 'bg-primary/10 border border-primary/20'
+                }`}>
+                  {previewImage ? (
+                    <img src={previewImage} alt="Profile" className="w-full h-full object-cover" />
+                  ) : (
+                    <span className="text-primary font-semibold text-lg">{userInitials}</span>
+                  )}
+                </div>
 
-              {/* Upload Button */}
-              <div>
-                <label className="cursor-pointer px-4 py-2 bg-red-500 hover:bg-red-600 rounded-lg text-white font-medium transition inline-block">
-                  Choose Image
-                  <input
-                    type="file"
-                    accept="image/png,image/jpeg,image/jpg,image/gif"
-                    onChange={handleImageChange}
-                    className="hidden"
-                  />
-                </label>
-                <p className="text-gray-400 text-sm mt-2">PNG, JPG or GIF (max 2MB)</p>
+                <div>
+                  <label className="cursor-pointer btn btn-secondary btn-sm inline-block">
+                    Choose Image
+                    <input type="file" accept="image/png,image/jpeg,image/jpg,image/gif" onChange={handleImageChange} className="hidden" />
+                  </label>
+                  <p className="text-xs text-muted-foreground mt-1.5">PNG, JPG or GIF (max 2MB)</p>
+                </div>
               </div>
             </div>
-          </div>
 
-          {/* Name Field */}
-          <div>
-            <label className="block text-white font-semibold mb-2">Name</label>
-            <input
+            {/* Name Field */}
+            <Input
+              label="Name"
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="w-full px-4 py-3 rounded-lg bg-white/10 border border-white/20 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-500"
               placeholder="Enter your name"
             />
-          </div>
 
-          {/* Email (Read-only) */}
-          <div>
-            <label className="block text-white font-semibold mb-2">Email</label>
-            <input
-              type="email"
-              value={session.user.email || ""}
-              disabled
-              className="w-full px-4 py-3 rounded-lg bg-white/5 border border-white/10 text-gray-400 cursor-not-allowed"
-            />
-            <p className="text-gray-500 text-sm mt-1">Email cannot be changed</p>
-          </div>
+            {/* Email (Read-only) */}
+            <div>
+              <label className="block text-sm font-medium text-foreground mb-1.5">Email</label>
+              <input
+                type="email"
+                value={session.user.email || ""}
+                disabled
+                className="w-full px-3 py-2.5 rounded-md bg-secondary/50 border border-border/60 text-muted-foreground text-sm cursor-not-allowed"
+              />
+              <p className="text-xs text-muted-foreground mt-1.5">Email cannot be changed</p>
+            </div>
 
-          {/* Save Button */}
-          <div className="flex justify-end space-x-4">
-            <button
-              onClick={() => router.back()}
-              className="px-6 py-3 rounded-lg bg-white/10 text-white hover:bg-white/20 transition font-medium"
-            >
-              Cancel
-            </button>
-            <button
-              onClick={handleSave}
-              disabled={isUploading}
-              className="px-6 py-3 rounded-lg bg-gradient-to-r from-red-600 via-red-500 to-pink-500 text-white hover:shadow-lg transition font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isUploading ? "Saving..." : "Save Changes"}
-            </button>
-          </div>
-        </div>
+            {/* Save Button */}
+            <div className="flex justify-end gap-3 pt-2">
+              <Button variant="outline" onClick={() => router.back()}>
+                Cancel
+              </Button>
+              <Button
+                variant="primary"
+                onClick={handleSave}
+                disabled={isUploading}
+              >
+                {isUploading ? "Saving..." : "Save Changes"}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </main>
   );

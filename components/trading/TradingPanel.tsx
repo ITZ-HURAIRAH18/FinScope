@@ -5,6 +5,7 @@ import { useSession } from 'next-auth/react';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { executeBuy, executeSell, fetchPortfolio } from '@/store/slices/portfolioSlice';
 import { formatCurrency } from '@/lib/utils';
+import { Card, CardContent, CardHeader, CardTitle, Button, Input, Badge } from '@/components/ui';
 
 interface TradingPanelProps {
   symbol: string;
@@ -16,12 +17,11 @@ export default function TradingPanel({ symbol, type, currentPrice }: TradingPane
   const { data: session } = useSession();
   const dispatch = useAppDispatch();
   const { balance, holdings, loading, error } = useAppSelector((state) => state.portfolio);
-  
+
   const [activeTab, setActiveTab] = useState<'buy' | 'sell'>('buy');
   const [quantity, setQuantity] = useState<string>('');
   const [successMessage, setSuccessMessage] = useState<string>('');
 
-  // Find current holding for this symbol
   const currentHolding = holdings.find(
     (h) => h.symbol === symbol && h.type === type
   );
@@ -33,7 +33,6 @@ export default function TradingPanel({ symbol, type, currentPrice }: TradingPane
   }, [dispatch, session]);
 
   const handleQuantityChange = (value: string) => {
-    // Allow decimal numbers
     if (value === '' || /^\d*\.?\d*$/.test(value)) {
       setQuantity(value);
     }
@@ -45,16 +44,12 @@ export default function TradingPanel({ symbol, type, currentPrice }: TradingPane
   };
 
   const handleBuy = async () => {
-    if (!quantity || parseFloat(quantity) <= 0) {
-      return;
-    }
+    if (!quantity || parseFloat(quantity) <= 0) return;
 
     const qty = parseFloat(quantity);
     const total = qty * currentPrice;
 
-    if (total > balance) {
-      return;
-    }
+    if (total > balance) return;
 
     try {
       await dispatch(executeBuy({ symbol, type, quantity: qty, price: currentPrice })).unwrap();
@@ -68,15 +63,11 @@ export default function TradingPanel({ symbol, type, currentPrice }: TradingPane
   };
 
   const handleSell = async () => {
-    if (!quantity || parseFloat(quantity) <= 0) {
-      return;
-    }
+    if (!quantity || parseFloat(quantity) <= 0) return;
 
     const qty = parseFloat(quantity);
 
-    if (!currentHolding || qty > currentHolding.quantity) {
-      return;
-    }
+    if (!currentHolding || qty > currentHolding.quantity) return;
 
     try {
       await dispatch(executeSell({ symbol, type, quantity: qty, price: currentPrice })).unwrap();
@@ -102,135 +93,175 @@ export default function TradingPanel({ symbol, type, currentPrice }: TradingPane
 
   if (!session) {
     return (
-      <div className="glass-card p-4 sm:p-6 lg:p-8 rounded-2xl border border-white/20 mb-8">
-        <div className="text-center">
-          <h2 className="text-xl sm:text-2xl font-bold text-white mb-4">Trading</h2>
-          <p className="text-gray-400 mb-4">Please log in to start trading</p>
-          <a
-            href="/auth/login"
-            className="inline-block px-6 py-3 bg-gradient-to-r from-red-600 via-red-500 to-pink-500 text-white font-semibold rounded-lg hover:shadow-lg transition"
-          >
-            Log In
+      <Card>
+        <CardContent className="py-12 text-center">
+          <div className="w-10 h-10 mx-auto mb-4 rounded-md bg-secondary/60 border border-border/60 flex items-center justify-center">
+            <svg className="w-5 h-5 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
+            </svg>
+          </div>
+          <h3 className="text-sm font-medium text-foreground mb-1">Authentication required</h3>
+          <p className="text-xs text-muted-foreground mb-5">Sign in to start trading</p>
+          <a href="/auth/login">
+            <Button variant="primary" size="sm">Sign in</Button>
           </a>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
     );
   }
 
   return (
-    <div className="glass-card p-4 sm:p-6 lg:p-8 rounded-2xl border border-white/20 mb-8">
-      <h2 className="text-xl sm:text-2xl font-bold text-white mb-4 sm:mb-6">Trade {symbol}</h2>
-
-      {/* Buy/Sell Tabs */}
-      <div className="flex mb-4 sm:mb-6 bg-black/30 rounded-lg p-1">
-        <button
-          onClick={() => setActiveTab('buy')}
-          className={`flex-1 py-2 sm:py-3 rounded-lg text-sm sm:text-base font-semibold transition ${
-            activeTab === 'buy'
-              ? 'bg-green-500 text-white'
-              : 'text-gray-400 hover:text-white'
-          }`}
-        >
-          Buy
-        </button>
-        <button
-          onClick={() => setActiveTab('sell')}
-          className={`flex-1 py-2 sm:py-3 rounded-lg text-sm sm:text-base font-semibold transition ${
-            activeTab === 'sell'
-              ? 'bg-red-500 text-white'
-              : 'text-gray-400 hover:text-white'
-          }`}
-        >
-          Sell
-        </button>
-      </div>
-
-      {/* Current Info */}
-      <div className="mb-4 sm:mb-6 space-y-2 sm:space-y-3">
-        <div className="flex justify-between items-center">
-          <span className="text-sm sm:text-base text-gray-400">Current Price</span>
-          <span className="text-sm sm:text-base text-white font-mono font-semibold">{formatCurrency(currentPrice)}</span>
+    <Card>
+      <CardHeader className="pb-4">
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-base font-semibold">
+            Trade {symbol}
+          </CardTitle>
+          <Badge variant={type === 'CRYPTO' ? 'primary' : 'muted'}>
+            {type === 'CRYPTO' ? 'Crypto' : 'Stock'}
+          </Badge>
         </div>
-        <div className="flex justify-between items-center">
-          <span className="text-sm sm:text-base text-gray-400">Available Balance</span>
-          <span className="text-sm sm:text-base text-white font-mono font-semibold">{formatCurrency(balance)}</span>
-        </div>
-        {currentHolding && (
-          <div className="flex justify-between items-center">
-            <span className="text-sm sm:text-base text-gray-400">Your Holdings</span>
-            <span className="text-sm sm:text-base text-white font-mono font-semibold">
-              {currentHolding.quantity.toFixed(8)} {symbol}
-            </span>
-          </div>
-        )}
-      </div>
-
-      {/* Quantity Input */}
-      <div className="mb-4">
-        <label className="block text-gray-400 mb-2">Quantity</label>
-        <div className="flex space-x-2">
-          <input
-            type="text"
-            value={quantity}
-            onChange={(e) => handleQuantityChange(e.target.value)}
-            placeholder="0.00"
-            className="flex-1 px-4 py-3 bg-black/30 border border-white/10 rounded-lg text-white font-mono focus:outline-none focus:border-blue-500"
-          />
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {/* Buy/Sell Tabs */}
+        <div className="flex p-0.5 bg-secondary rounded-md gap-0.5">
           <button
-            onClick={activeTab === 'buy' ? handleMaxBuy : handleMaxSell}
-            className="px-4 py-3 bg-blue-500/20 border border-blue-500/50 rounded-lg text-blue-400 hover:bg-blue-500/30 transition"
+            onClick={() => setActiveTab('buy')}
+            className={`flex-1 py-2 rounded-md text-sm font-medium transition-all duration-150 ${
+              activeTab === 'buy'
+                ? 'bg-success/90 text-white shadow-subtle'
+                : 'text-muted-foreground hover:text-foreground'
+            }`}
           >
-            MAX
+            Buy
+          </button>
+          <button
+            onClick={() => setActiveTab('sell')}
+            className={`flex-1 py-2 rounded-md text-sm font-medium transition-all duration-150 ${
+              activeTab === 'sell'
+                ? 'bg-error/90 text-white shadow-subtle'
+                : 'text-muted-foreground hover:text-foreground'
+            }`}
+          >
+            Sell
           </button>
         </div>
-      </div>
 
-      {/* Total */}
-      <div className="mb-4 sm:mb-6 p-3 sm:p-4 bg-black/30 rounded-lg">
-        <div className="flex justify-between items-center">
-          <span className="text-sm sm:text-base text-gray-400">Total</span>
-          <span className="text-xl sm:text-2xl font-bold text-white font-mono">
-            {formatCurrency(calculateTotal())}
-          </span>
+        {/* Current Info */}
+        <div className="space-y-2.5">
+          <div className="flex justify-between items-center">
+            <span className="section-label">Current Price</span>
+            <span className="value-mono text-sm">{formatCurrency(currentPrice)}</span>
+          </div>
+          <div className="flex justify-between items-center">
+            <span className="section-label">Available Balance</span>
+            <span className="value-mono text-sm">{formatCurrency(balance)}</span>
+          </div>
+          {currentHolding && (
+            <div className="flex justify-between items-center">
+              <span className="section-label">Your Holdings</span>
+              <span className="value-mono text-sm">
+                {currentHolding.quantity.toFixed(8)} {symbol}
+              </span>
+            </div>
+          )}
         </div>
-      </div>
 
-      {/* Error/Success Messages */}
-      {error && (
-        <div className="mb-4 p-4 bg-red-500/20 border border-red-500/50 rounded-lg text-red-400">
-          {error}
-        </div>
-      )}
-      {successMessage && (
-        <div className="mb-4 p-4 bg-green-500/20 border border-green-500/50 rounded-lg text-green-400">
-          {successMessage}
-        </div>
-      )}
+        <div className="divider my-3" />
 
-      {/* Action Button */}
-      {activeTab === 'buy' ? (
-        <button
-          onClick={handleBuy}
-          disabled={loading || !quantity || parseFloat(quantity) <= 0 || calculateTotal() > balance}
-          className="w-full py-3 sm:py-4 text-sm sm:text-base bg-gradient-to-r from-green-500 to-green-600 text-white font-bold rounded-lg hover:shadow-lg hover:shadow-green-500/50 transition disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {loading ? 'Processing...' : `Buy ${symbol}`}
-        </button>
-      ) : (
-        <button
-          onClick={handleSell}
-          disabled={
-            loading ||
-            !quantity ||
-            parseFloat(quantity) <= 0 ||
-            !currentHolding ||
-            parseFloat(quantity) > currentHolding.quantity
-          }
-          className="w-full py-3 sm:py-4 text-sm sm:text-base bg-gradient-to-r from-red-500 to-red-600 text-white font-bold rounded-lg hover:shadow-lg hover:shadow-red-500/50 transition disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {loading ? 'Processing...' : `Sell ${symbol}`}
-        </button>
-      )}
-    </div>
+        {/* Quantity Input */}
+        <div>
+          <label className="block section-label mb-2">Quantity</label>
+          <div className="flex gap-2">
+            <Input
+              type="text"
+              value={quantity}
+              onChange={(e) => handleQuantityChange(e.target.value)}
+              placeholder="0.00"
+              className="font-mono"
+            />
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={activeTab === 'buy' ? handleMaxBuy : handleMaxSell}
+              className="shrink-0 text-xs"
+            >
+              MAX
+            </Button>
+          </div>
+        </div>
+
+        {/* Total */}
+        <div className="p-3 bg-secondary/40 rounded-md border border-border/60">
+          <div className="flex justify-between items-center">
+            <span className="section-label">Estimated Total</span>
+            <span className="value-large text-lg">
+              {formatCurrency(calculateTotal())}
+            </span>
+          </div>
+        </div>
+
+        {/* Error/Success Messages */}
+        {error && (
+          <div className="p-3 bg-error-muted border border-error/20 rounded-md text-xs text-error">
+            {error}
+          </div>
+        )}
+        {successMessage && (
+          <div className="p-3 bg-success-muted border border-success/20 rounded-md text-xs text-success">
+            {successMessage}
+          </div>
+        )}
+
+        {/* Action Button */}
+        {activeTab === 'buy' ? (
+          <Button
+            variant="success"
+            size="lg"
+            onClick={handleBuy}
+            disabled={loading || !quantity || parseFloat(quantity) <= 0 || calculateTotal() > balance}
+            className="w-full"
+          >
+            {loading ? (
+              <span className="flex items-center gap-2">
+                <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                </svg>
+                Processing...
+              </span>
+            ) : (
+              `Buy ${symbol}`
+            )}
+          </Button>
+        ) : (
+          <Button
+            variant="danger"
+            size="lg"
+            onClick={handleSell}
+            disabled={
+              loading ||
+              !quantity ||
+              parseFloat(quantity) <= 0 ||
+              !currentHolding ||
+              parseFloat(quantity) > currentHolding.quantity
+            }
+            className="w-full"
+          >
+            {loading ? (
+              <span className="flex items-center gap-2">
+                <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                </svg>
+                Processing...
+              </span>
+            ) : (
+              `Sell ${symbol}`
+            )}
+          </Button>
+        )}
+      </CardContent>
+    </Card>
   );
 }

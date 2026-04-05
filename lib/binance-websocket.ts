@@ -21,6 +21,12 @@ class BinanceWebSocketClient {
   private callbacks: Set<PriceUpdateCallback> = new Set();
   private prices: Record<string, CryptoPrice> = {};
   private reconnectTimer: NodeJS.Timeout | null = null;
+  private pollingTimer: NodeJS.Timeout | null = null;
+  private isPolling = false;
+  private wsFailed = false;
+  private reconnectAttempts = 0;
+  private maxReconnectAttempts = 5;
+  private reconnectBaseDelay = 2000; // 2 seconds
   private symbols: string[] = [
     'btcusdt',
     'ethusdt',
@@ -45,6 +51,8 @@ class BinanceWebSocketClient {
       return;
     }
 
+    this.reconnectAttempts = 0; // Reset attempts when starting a new connection
+
     try {
       // Connect to Binance public 24hr ticker stream for multiple symbols
       const streams = this.symbols.map(s => `${s}@ticker`).join('/');
@@ -55,6 +63,14 @@ class BinanceWebSocketClient {
 
       this.ws.onopen = () => {
         console.log('[Binance WS] Connected successfully');
+        this.reconnectAttempts = 0; // Reset on successful connection
+        this.wsFailed = false;
+        
+        // Stop polling if WS reconnected
+        if (this.isPolling) {
+          console.log('[Binance WS] Stopping fallback polling, using WebSocket.');
+          this.stopPolling();
+        }
       };
 
       this.ws.onmessage = (event) => {
@@ -77,8 +93,15 @@ class BinanceWebSocketClient {
       this.ws.onclose = (event) => {
         console.log(`[Binance WS] Connection closed (code: ${event.code}, reason: ${event.reason || 'No reason provided'})`);
 
-        // Only reconnect if it wasn't a normal closure
-        if (event.code !== 1000) {
+        // Mark WebSocket as failed
+        this.wsFailed = true;
+        
+        // Start fallback polling if not already polling
+        if (!this.isPolling) {
+          console.log('[Binance WS] Starting fallback REST API polling...');
+          this.startPolling();
+        } else {
+          // Only schedule reconnect if we want to retry WS later
           this.scheduleReconnect();
         }
       };
@@ -123,10 +146,71 @@ class BinanceWebSocketClient {
     if (this.reconnectTimer) {
       clearTimeout(this.reconnectTimer);
     }
+    
+    if (this.reconnectAttempts >= this.maxReconnectAttempts) {
+      console.error(`[Binance WS] Max reconnection attempts (${this.maxReconnectAttempts}) reached. Using REST polling only.`);
+      if (!this.isPolling) {
+        this.startPolling();
+      }
+      return;
+    }
+    
+    this.reconnectAttempts++;
+    // Exponential backoff: 2s, 4s, 8s, 16s, 32s
+    const delay = Math.min(this.reconnectBaseDelay * Math.pow(2, this.reconnectAttempts - 1), 30000);
+    
+    console.log(`[Binance WS] Attempting to reconnect... (attempt ${this.reconnectAttempts}/${this.maxReconnectAttempts}, delay: ${delay}ms)`);
+    
     this.reconnectTimer = setTimeout(() => {
-      console.log('[Binance WS] Attempting to reconnect...');
       this.connect();
-    }, 5000);
+    }, delay);
+  }
+
+  private async startPolling() {
+    if (this.isPolling) return;
+    this.isPolling = true;
+    
+    await this.fetchPricesFromRestApi();
+    
+    // Poll every 10 seconds
+    this.pollingTimer = setInterval(() => {
+      this.fetchPricesFromRestApi();
+    }, 10000);
+  }
+
+  private stopPolling() {
+    if (this.pollingTimer) {
+      clearInterval(this.pollingTimer);
+      this.pollingTimer = null;
+    }
+    this.isPolling = false;
+    this.wsFailed = false;
+    this.reconnectAttempts = 0;
+  }
+
+  private async fetchPricesFromRestApi() {
+    try {
+      const response = await fetch('/api/crypto-prices?symbols=' + this.symbols.map(s => s.replace('usdt', '').toUpperCase()).join(','));
+      
+      if (!response.ok) {
+        console.error('[Binance REST] API error:', response.status);
+        return;
+      }
+      
+      const data = await response.json();
+      
+      // Merge with existing prices
+      Object.keys(data).forEach(symbol => {
+        if (data[symbol]) {
+          this.prices[symbol] = data[symbol];
+        }
+      });
+      
+      // Notify callbacks
+      this.notifyCallbacks();
+    } catch (error) {
+      console.error('[Binance REST] Failed to fetch prices:', error);
+    }
   }
 
   subscribe(callback: PriceUpdateCallback) {
@@ -144,6 +228,7 @@ class BinanceWebSocketClient {
     if (this.reconnectTimer) {
       clearTimeout(this.reconnectTimer);
     }
+    this.stopPolling();
     if (this.ws) {
       this.ws.close();
       this.ws = null;

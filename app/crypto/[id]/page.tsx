@@ -10,13 +10,14 @@ import CryptoChart from '@/components/crypto/CryptoChart';
 import LoadingScreen from '@/components/LoadingScreen';
 import TradingPanel from '@/components/trading/TradingPanel';
 import CryptoIcon from '@/components/crypto/CryptoIcon';
+import { Card, CardContent, CardHeader, CardTitle, Badge, Button } from '@/components/ui';
 
 export default function CryptoDetailPage() {
   const params = useParams();
   const router = useRouter();
   const cryptoId = params.id as string;
   const symbol = cryptoId.toUpperCase();
-  
+
   const { cryptoPrices } = useAppSelector((state) => state.market);
   const priceData = cryptoPrices[symbol];
 
@@ -25,120 +26,128 @@ export default function CryptoDetailPage() {
   }
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-black via-gray-900 to-black">
-      {/* Header */}
+    <main className="min-h-screen bg-background">
       <Header activePage="markets" />
 
-      {/* Content */}
-      <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8 py-4 sm:py-6 lg:py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        {/* Back Button */}
         <button
           onClick={() => router.push('/dashboard')}
-          className="text-gray-400 hover:text-white transition mb-4 sm:mb-6 flex items-center text-sm sm:text-base"
+          className="text-muted-foreground hover:text-foreground transition mb-6 flex items-center text-sm"
         >
-          ← Back to Markets
+          <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
+          </svg>
+          Back to Markets
         </button>
 
         {/* Header Section */}
-        <div className="glass-card p-4 sm:p-6 lg:p-8 rounded-2xl mb-6 sm:mb-8 border border-white">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
-            <div className="flex items-center space-x-4">
-              <CryptoIcon 
-                symbol={symbol} 
-                className="w-12 h-12 sm:w-16 sm:h-16 mr-3" 
-              />
-              <div>
-                <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white">{symbol}</h1>
-                <p className="text-gray-400">Cryptocurrency</p>
+        <Card className="mb-6 animate-fade-in">
+          <CardContent className="py-5">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-5">
+              <div className="flex items-center gap-4">
+                <CryptoIcon symbol={symbol} className="w-12 h-12" />
+                <div>
+                  <h1 className="text-xl font-semibold text-foreground tracking-tight">{symbol}</h1>
+                  <p className="text-sm text-muted-foreground">Cryptocurrency</p>
+                </div>
+                <WatchlistButton symbol={symbol} type="CRYPTO" meta={{ name: symbol }} />
               </div>
-            </div>
 
-            <div className="text-left md:text-right">
-              <div className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white font-mono mb-2">
-                {formatCurrency(priceData.price)}
-              </div>
-              <div className={`text-lg sm:text-xl lg:text-2xl font-semibold ${getPriceChangeColor(priceData.priceChangePercent24h)}`}>
-                {formatPercentage(priceData.priceChangePercent24h)}
-                <span className="text-sm sm:text-base lg:text-lg ml-2">({formatCurrency(priceData.priceChange24h)})</span>
+              <div className="text-left md:text-right">
+                <div className="text-2xl font-semibold text-foreground font-mono tracking-tight mb-1">
+                  {formatCurrency(priceData.price)}
+                </div>
+                <div className={`text-sm font-mono font-medium ${getPriceChangeColor(priceData.priceChangePercent24h)}`}>
+                  {formatPercentage(priceData.priceChangePercent24h)}
+                  <span className="text-xs ml-1">({formatCurrency(priceData.priceChange24h)})</span>
+                </div>
               </div>
             </div>
-          </div>
-        </div>
-        
+          </CardContent>
+        </Card>
+
         {/* Chart Section */}
-        <CryptoChart symbol={symbol} />
+        <div className="mb-6 animate-slide-up">
+          <CryptoChart symbol={symbol} />
+        </div>
 
         {/* Trading Section */}
-        <TradingPanel symbol={symbol} type="CRYPTO" currentPrice={priceData.price} />
-
-        {/* Stats Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
-          <div className="glass-card p-4 sm:p-6 rounded-2xl border border-white">
-            <div className="text-gray-400 mb-2 text-sm sm:text-base">24h High</div>
-            <div className="text-xl sm:text-2xl font-bold text-white font-mono">
-              {formatCurrency(priceData.high24h)}
-            </div>
+        <div className="grid lg:grid-cols-3 gap-4 mb-6 animate-slide-up animate-delay-100">
+          <div className="lg:col-span-1">
+            <TradingPanel symbol={symbol} type="CRYPTO" currentPrice={priceData.price} />
           </div>
 
-          <div className="glass-card p-4 sm:p-6 rounded-2xl">
-            <div className="text-gray-400 mb-2 text-sm sm:text-base">24h Low</div>
-            <div className="text-xl sm:text-2xl font-bold text-white font-mono">
-              {formatCurrency(priceData.low24h)}
-            </div>
-          </div>
-
-          <div className="glass-card p-4 sm:p-6 rounded-2xl">
-            <div className="text-gray-400 mb-2 text-sm sm:text-base">24h Volume</div>
-            <div className="text-xl sm:text-2xl font-bold text-white font-mono">
-              {formatLargeNumber(priceData.volume24h)}
-            </div>
+          {/* Stats Grid */}
+          <div className="lg:col-span-2">
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base font-semibold">Market Statistics</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="stat-block">
+                    <div className="section-label mb-1.5">24h High</div>
+                    <div className="value-mono text-sm text-success">{formatCurrency(priceData.high24h)}</div>
+                  </div>
+                  <div className="stat-block">
+                    <div className="section-label mb-1.5">24h Low</div>
+                    <div className="value-mono text-sm text-error">{formatCurrency(priceData.low24h)}</div>
+                  </div>
+                  <div className="stat-block">
+                    <div className="section-label mb-1.5">24h Volume</div>
+                    <div className="value-mono text-sm">{formatLargeNumber(priceData.volume24h)}</div>
+                  </div>
+                  <div className="stat-block">
+                    <div className="section-label mb-1.5">24h Change</div>
+                    <div className={`value-mono text-sm ${getPriceChangeColor(priceData.priceChange24h)}`}>
+                      {formatCurrency(priceData.priceChange24h)}
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           </div>
         </div>
 
         {/* Additional Info */}
-        <div className="glass-card p-4 sm:p-6 lg:p-8 rounded-2xl mb-6 sm:mb-8 border border-white">
-          <h2 className="text-xl sm:text-2xl font-bold text-white mb-4 sm:mb-6">Market Information</h2>
-          
-          <div className="grid md:grid-cols-2 gap-6">
-            <div className="flex justify-between items-center border-b border-white/10 pb-4">
-              <span className="text-gray-400">Current Price</span>
-              <span className="text-white font-mono font-semibold">{formatCurrency(priceData.price)}</span>
+        <Card className="animate-slide-up animate-delay-200">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base font-semibold">Market Information</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid md:grid-cols-2 gap-x-8 gap-y-4">
+              <div className="flex justify-between items-center py-3 border-b border-border/60">
+                <span className="text-sm text-muted-foreground">Current Price</span>
+                <span className="text-sm font-mono font-medium text-foreground">{formatCurrency(priceData.price)}</span>
+              </div>
+              <div className="flex justify-between items-center py-3 border-b border-border/60">
+                <span className="text-sm text-muted-foreground">24h Change</span>
+                <span className={`text-sm font-mono font-medium ${getPriceChangeColor(priceData.priceChange24h)}`}>
+                  {formatCurrency(priceData.priceChange24h)}
+                </span>
+              </div>
+              <div className="flex justify-between items-center py-3 border-b border-border/60">
+                <span className="text-sm text-muted-foreground">24h Change %</span>
+                <span className={`text-sm font-mono font-medium ${getPriceChangeColor(priceData.priceChangePercent24h)}`}>
+                  {formatPercentage(priceData.priceChangePercent24h)}
+                </span>
+              </div>
+              <div className="flex justify-between items-center py-3 border-b border-border/60">
+                <span className="text-sm text-muted-foreground">24h Volume</span>
+                <span className="text-sm font-mono font-medium text-foreground">{formatLargeNumber(priceData.volume24h)}</span>
+              </div>
+              <div className="flex justify-between items-center py-3 border-b border-border/60">
+                <span className="text-sm text-muted-foreground">24h High</span>
+                <span className="text-sm font-mono font-medium text-success">{formatCurrency(priceData.high24h)}</span>
+              </div>
+              <div className="flex justify-between items-center py-3 border-b border-border/60">
+                <span className="text-sm text-muted-foreground">24h Low</span>
+                <span className="text-sm font-mono font-medium text-error">{formatCurrency(priceData.low24h)}</span>
+              </div>
             </div>
-
-            <div className="flex justify-between items-center border-b border-white/10 pb-4">
-              <span className="text-gray-400">24h Change</span>
-              <span className={`font-mono font-semibold ${getPriceChangeColor(priceData.priceChange24h)}`}>
-                {formatCurrency(priceData.priceChange24h)}
-              </span>
-            </div>
-
-            <div className="flex justify-between items-center border-b border-white/10 pb-4">
-              <span className="text-gray-400">24h Change %</span>
-              <span className={`font-mono font-semibold ${getPriceChangeColor(priceData.priceChangePercent24h)}`}>
-                {formatPercentage(priceData.priceChangePercent24h)}
-              </span>
-            </div>
-
-            <div className="flex justify-between items-center border-b border-white/10 pb-4">
-              <span className="text-gray-400">24h Volume</span>
-              <span className="text-white font-mono font-semibold">{formatLargeNumber(priceData.volume24h)}</span>
-            </div>
-
-            <div className="flex justify-between items-center border-b border-white/10 pb-4">
-              <span className="text-gray-400">24h High</span>
-              <span className="text-green-500 font-mono font-semibold">{formatCurrency(priceData.high24h)}</span>
-            </div>
-
-            <div className="flex justify-between items-center border-b border-white/10 pb-4">
-              <span className="text-gray-400">24h Low</span>
-              <span className="text-red-500 font-mono font-semibold">{formatCurrency(priceData.low24h)}</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Watchlist Button */}
-        <div className="flex justify-center">
-          <WatchlistButton symbol={symbol} type="CRYPTO" meta={{ name: symbol }} />
-        </div>
+          </CardContent>
+        </Card>
       </div>
     </main>
   );

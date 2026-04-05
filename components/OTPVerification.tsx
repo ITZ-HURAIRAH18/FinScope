@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { Button, Input, Card, CardContent } from '@/components/ui';
 
 interface OTPVerificationProps {
   email: string;
@@ -16,24 +17,17 @@ export default function OTPVerification({ email, mode = 'signup' }: OTPVerificat
   const [success, setSuccess] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isResending, setIsResending] = useState(false);
-  const [timeLeft, setTimeLeft] = useState<number | null>(null); // Will be set from database
+  const [timeLeft, setTimeLeft] = useState<number | null>(null);
   const [isFetchingTime, setIsFetchingTime] = useState(true);
 
-  // Fetch actual remaining time from database on mount
   useEffect(() => {
     const fetchRemainingTime = async () => {
       try {
-        console.log('Fetching remaining time for email:', email);
         const response = await fetch(`/api/auth/verify-email?email=${encodeURIComponent(email)}`);
         const data = await response.json();
-        
-        console.log('API Response:', { status: response.status, data });
-        
+
         if (response.ok && data.remainingSeconds !== undefined) {
-          console.log('Setting timeLeft to:', data.remainingSeconds);
           setTimeLeft(data.remainingSeconds);
-        } else {
-          console.log('Using default time (600 seconds)');
         }
       } catch (error) {
         console.error('Error fetching remaining time:', error);
@@ -45,12 +39,8 @@ export default function OTPVerification({ email, mode = 'signup' }: OTPVerificat
     fetchRemainingTime();
   }, [email]);
 
-  // Countdown timer - only start after fetching initial time
   useEffect(() => {
-    // Don't start countdown until we've fetched the actual time
-    if (isFetchingTime || timeLeft === null) {
-      return;
-    }
+    if (isFetchingTime || timeLeft === null) return;
 
     if (timeLeft <= 0) {
       if (mode === 'signup') {
@@ -77,12 +67,11 @@ export default function OTPVerification({ email, mode = 'signup' }: OTPVerificat
 
   const handleChange = (index: number, value: string) => {
     if (value.length > 1) return;
-    
+
     const newOtp = [...otp];
     newOtp[index] = value;
     setOtp(newOtp);
 
-    // Auto-focus next input
     if (value && index < 5) {
       const nextInput = document.getElementById(`otp-${index + 1}`);
       nextInput?.focus();
@@ -147,7 +136,6 @@ export default function OTPVerification({ email, mode = 'signup' }: OTPVerificat
     setSuccess('');
 
     try {
-      console.log('Resending OTP for email:', email);
       const response = await fetch('/api/auth/verify-email', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -155,7 +143,6 @@ export default function OTPVerification({ email, mode = 'signup' }: OTPVerificat
       });
 
       const data = await response.json();
-      console.log('Resend API Response:', { status: response.status, data });
 
       if (!response.ok) {
         setError(data.error || 'Failed to resend OTP');
@@ -165,13 +152,10 @@ export default function OTPVerification({ email, mode = 'signup' }: OTPVerificat
 
       setSuccess('New OTP sent to your email!');
       setOtp(['', '', '', '', '', '']);
-      // Use the remaining seconds from the server response
       if (data.remainingSeconds !== undefined) {
-        console.log('Resend: Setting timeLeft to:', data.remainingSeconds);
         setTimeLeft(data.remainingSeconds);
       } else {
-        console.log('Resend: Using fallback time (600 seconds)');
-        setTimeLeft(600); // Fallback to 10 minutes
+        setTimeLeft(600);
       }
       setIsResending(false);
     } catch (error) {
@@ -182,107 +166,115 @@ export default function OTPVerification({ email, mode = 'signup' }: OTPVerificat
   };
 
   return (
-    <main className="min-h-screen bg-black flex items-center justify-center px-4">
+    <main className="min-h-screen bg-background flex items-center justify-center px-4">
       <div className="w-full max-w-md">
         {/* Logo */}
         <div className="text-center mb-8">
-          <Link href="/" className="inline-flex items-center space-x-2">
-            <div className="w-12 h-12 bg-gradient-to-r from-red-600 via-red-500 to-pink-500 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-2xl">F</span>
+          <Link href="/" className="inline-flex items-center gap-2.5">
+            <div className="w-10 h-10 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center">
+              <svg className="w-5 h-5 text-primary" viewBox="0 0 24 12" fill="currentColor">
+                <path d="M0 11.5L2 9.5L5 10.5L8 6.5L11 8.5L14 3.5L17 5.5L20 1.5L22 2.5L24 0.5V12H0V11.5Z" />
+              </svg>
             </div>
-            <span className="text-3xl font-bold gradient-text">FinScope</span>
+            <span className="text-2xl font-semibold text-foreground tracking-tight">FinScope</span>
           </Link>
         </div>
 
         {/* Verification Form */}
-        <div className="glass-card p-8 rounded-2xl">
-          <div className="text-center mb-6">
-            <div className="w-16 h-16 bg-gradient-to-r from-red-600 via-red-500 to-pink-500 rounded-full flex items-center justify-center mx-auto mb-4">
-              <span className="text-4xl">📧</span>
+        <Card>
+          <CardContent className="py-5 space-y-5">
+            <div className="text-center">
+              <div className="w-12 h-12 rounded-md bg-primary/10 border border-primary/20 flex items-center justify-center mx-auto mb-4">
+                <svg className="w-6 h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25v-10.5a2.25 2.25 0 012.25-2.25h15a2.25 2.25 0 012.25 2.25z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 15.75v-3m0 0v-3m0 0h.008v.008H12v-.008z" />
+                </svg>
+              </div>
+              <h1 className="text-xl font-semibold text-foreground mb-1">Verify Your Email</h1>
+              <p className="text-sm text-muted-foreground">
+                {mode === 'signup' ? "We've sent a 6-digit code to" : "Please verify your email to continue"}
+                <br />
+                <span className="text-foreground font-medium">{email}</span>
+              </p>
             </div>
-            <h1 className="text-3xl font-bold text-white mb-2">Verify Your Email</h1>
-            <p className="text-gray-400">
-              {mode === 'signup' 
-                ? "We've sent a 6-digit code to" 
-                : "Please verify your email to continue"}<br />
-              <span className="text-white font-semibold">{email}</span>
-            </p>
-          </div>
 
-          {/* Timer */}
-          <div className="mb-6 text-center">
-            <p className="text-gray-400 text-sm">
-              Time remaining: {isFetchingTime ? (
-                <span className="text-gray-400 font-mono font-semibold">Loading...</span>
-              ) : (
-                <span className="text-red-400 font-mono font-semibold">{formatTime(timeLeft)}</span>
+            {/* Timer */}
+            <div className="text-center">
+              <p className="text-xs text-muted-foreground">
+                Time remaining:{' '}
+                {isFetchingTime ? (
+                  <span className="font-mono">Loading...</span>
+                ) : (
+                  <span className={`font-mono font-medium ${timeLeft !== null && timeLeft <= 0 ? 'text-error' : 'text-primary'}`}>
+                    {formatTime(timeLeft)}
+                  </span>
+                )}
+              </p>
+              {mode === 'signup' && (
+                <p className="text-xs text-muted-foreground mt-1">Account will be deleted if not verified</p>
               )}
-            </p>
-            {mode === 'signup' && (
-              <p className="text-gray-500 text-xs mt-1">Account will be deleted if not verified</p>
+            </div>
+
+            {success && (
+              <div className="p-3 bg-success-muted border border-success/20 rounded-md text-xs text-success text-center">
+                {success}
+              </div>
             )}
-          </div>
 
-          {success && (
-            <div className="mb-4 p-4 bg-green-500/10 border border-green-500/50 rounded-lg">
-              <p className="text-green-400 text-sm text-center">{success}</p>
+            {error && (
+              <div className="p-3 bg-error-muted border border-error/20 rounded-md text-xs text-error text-center">
+                {error}
+              </div>
+            )}
+
+            <form onSubmit={handleSubmit} className="space-y-4">
+              {/* OTP Input */}
+              <div className="flex justify-center gap-2">
+                {otp.map((digit, index) => (
+                  <input
+                    key={index}
+                    id={`otp-${index}`}
+                    type="text"
+                    inputMode="numeric"
+                    maxLength={1}
+                    value={digit}
+                    onChange={(e) => handleChange(index, e.target.value.replace(/\D/g, ''))}
+                    onKeyDown={(e) => handleKeyDown(index, e)}
+                    onPaste={index === 0 ? handlePaste : undefined}
+                    className="w-11 h-12 text-center text-lg font-semibold rounded-md bg-secondary border border-border text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all disabled:opacity-50"
+                    disabled={isLoading}
+                  />
+                ))}
+              </div>
+
+              <Button type="submit" variant="primary" size="lg" className="w-full" disabled={isLoading || otp.join('').length !== 6 || timeLeft === null || timeLeft <= 0}>
+                {isLoading ? 'Verifying...' : 'Verify Email'}
+              </Button>
+            </form>
+
+            {/* Resend */}
+            <div className="text-center">
+              <p className="text-xs text-muted-foreground">
+                Didn&apos;t receive the code?{' '}
+                <button
+                  onClick={handleResend}
+                  disabled={isResending || timeLeft === null || timeLeft <= 0}
+                  className="text-primary hover:text-primary-hover transition-colors font-medium disabled:opacity-50"
+                >
+                  {isResending ? 'Sending...' : 'Resend OTP'}
+                </button>
+              </p>
             </div>
-          )}
-
-          {error && (
-            <div className="mb-4 p-4 bg-red-500/10 border border-red-500/50 rounded-lg">
-              <p className="text-red-400 text-sm text-center">{error}</p>
-            </div>
-          )}
-
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {/* OTP Input */}
-            <div className="flex justify-center gap-2">
-              {otp.map((digit, index) => (
-                <input
-                  key={index}
-                  id={`otp-${index}`}
-                  type="text"
-                  inputMode="numeric"
-                  maxLength={1}
-                  value={digit}
-                  onChange={(e) => handleChange(index, e.target.value.replace(/\D/g, ''))}
-                  onKeyDown={(e) => handleKeyDown(index, e)}
-                  onPaste={index === 0 ? handlePaste : undefined}
-                  className="w-12 h-14 text-center text-2xl font-bold rounded-lg bg-white/10 border-2 border-white/20 text-white focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition"
-                  disabled={isLoading}
-                />
-              ))}
-            </div>
-
-            <button
-              type="submit"
-              disabled={isLoading || otp.join('').length !== 6 || timeLeft === null || timeLeft <= 0}
-              className="w-full px-6 py-3 bg-gradient-to-r from-red-600 via-red-500 to-pink-500 rounded-lg text-white font-semibold hover:shadow-lg hover:shadow-red-500/50 transition transform hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
-            >
-              {isLoading ? 'Verifying...' : 'Verify Email'}
-            </button>
-          </form>
-
-          {/* Resend */}
-          <div className="mt-6 text-center">
-            <p className="text-gray-400 text-sm">
-              Didn&apos;t receive the code?{' '}
-              <button
-                onClick={handleResend}
-                disabled={isResending || timeLeft === null || timeLeft <= 0}
-                className="text-red-400 hover:text-red-300 transition font-semibold disabled:opacity-50"
-              >
-                {isResending ? 'Sending...' : 'Resend OTP'}
-              </button>
-            </p>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
 
         {/* Back to Login */}
         <div className="mt-6 text-center">
-          <Link href="/auth/login" className="text-gray-400 hover:text-white transition">
-            ← Back to Login
+          <Link href="/auth/login" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+            <svg className="w-3.5 h-3.5 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
+            </svg>
+            Back to Login
           </Link>
         </div>
       </div>

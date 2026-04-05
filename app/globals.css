@@ -2,42 +2,68 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ====================================================================
+   FinScope Premium Design System
+   Deep black + refined pink accents - Bloomberg Terminal meets Stripe
+   ==================================================================== */
+
 @layer base {
   :root {
+    /* Light mode - clean, professional */
     --background: 0 0% 100%;
-    --foreground: 222 47% 11%;
-    --card: 0 0% 100%;
-    --card-foreground: 222 47% 11%;
-    --primary: 221 83% 53%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 210 40% 96%;
-    --secondary-foreground: 222 47% 11%;
-    --muted: 210 40% 96%;
-    --muted-foreground: 215 16% 47%;
-    --accent: 210 40% 96%;
-    --accent-foreground: 222 47% 11%;
-    --border: 214 32% 91%;
-    --radius: 0.5rem;
-    --success: 142 71% 45%;
-    --error: 0 84% 60%;
+    --foreground: 0 0% 7%;
+    --card: 0 0% 98%;
+    --card-foreground: 0 0% 7%;
+    --card-border: 0 0% 90%;
+    --primary: 340 55% 48%;
+    --primary-foreground: 0 0% 100%;
+    --primary-hover: 340 50% 42%;
+    --primary-muted: 340 40% 95%;
+    --primary-glow: 340 55% 48%;
+    --secondary: 0 0% 95%;
+    --secondary-foreground: 0 0% 15%;
+    --muted: 0 0% 95%;
+    --muted-foreground: 0 0% 45%;
+    --accent: 340 30% 96%;
+    --accent-foreground: 0 0% 10%;
+    --accent-hover: 340 25% 92%;
+    --border: 0 0% 88%;
+    --radius: 0.625rem;
+    --success: 142 65% 38%;
+    --success-muted: 142 40% 92%;
+    --error: 0 72% 52%;
+    --error-muted: 0 40% 95%;
+    --warning: 38 92% 50%;
+    --warning-muted: 38 40% 95%;
   }
 
   .dark {
-    --background: 0 0% 0%;
-    --foreground: 0 0% 98%;
-    --card: 0 0% 5%;
-    --card-foreground: 0 0% 98%;
-    --primary: 217 91% 60%;
-    --primary-foreground: 0 0% 0%;
+    /* Dark mode - deep black with refined pink accents */
+    --background: 0 0% 3%;
+    --foreground: 0 0% 96%;
+    --card: 0 0% 6%;
+    --card-foreground: 0 0% 96%;
+    --card-border: 0 0% 12%;
+    --primary: 340 60% 54%;
+    --primary-foreground: 0 0% 100%;
+    --primary-hover: 340 55% 60%;
+    --primary-muted: 340 30% 10%;
+    --primary-glow: 340 60% 54%;
     --secondary: 0 0% 10%;
-    --secondary-foreground: 0 0% 98%;
+    --secondary-foreground: 0 0% 96%;
     --muted: 0 0% 10%;
-    --muted-foreground: 0 0% 65%;
-    --accent: 0 0% 10%;
-    --accent-foreground: 0 0% 98%;
-    --border: 0 0% 15%;
-    --success: 142 71% 45%;
-    --error: 0 84% 60%;
+    --muted-foreground: 0 0% 52%;
+    --accent: 340 20% 10%;
+    --accent-foreground: 0 0% 96%;
+    --accent-hover: 340 18% 14%;
+    --border: 0 0% 12%;
+    --radius: 0.625rem;
+    --success: 142 65% 44%;
+    --success-muted: 142 35% 12%;
+    --error: 0 72% 58%;
+    --error-muted: 0 35% 12%;
+    --warning: 38 92% 56%;
+    --warning-muted: 38 35% 12%;
   }
 }
 
@@ -45,35 +71,366 @@
   * {
     @apply border-border;
   }
+
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground antialiased;
     font-feature-settings: "rlig" 1, "calt" 1;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    /* Prevent any unexpected background images */
+    background-image: none !important;
+  }
+
+  /* Prevent images on main sections unless explicitly set */
+  main, section, header, nav, footer {
+    background-image: none;
+  }
+
+  /* Ensure img tags are properly sized */
+  img {
+    max-width: 100%;
+    height: auto;
+    display: block;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  ::selection {
+    @apply bg-primary/30 text-foreground;
+  }
+
+  /* Focus visible ring for accessibility */
+  :focus-visible {
+    @apply outline-none ring-2 ring-primary/50 ring-offset-2 ring-offset-background;
+  }
+
+  /* Remove default focus outline when using focus-visible */
+  :focus {
+    outline: none;
   }
 }
+
+/* ====================================================================
+   COMPONENT SYSTEM
+   ==================================================================== */
+
+@layer components {
+  /* === Cards === */
+  .card {
+    @apply bg-card border border-card-border rounded-lg;
+    @apply transition-all duration-200 ease-out;
+  }
+
+  .card-hover {
+    @apply hover:border-primary/30 hover:shadow-pink-glow;
+  }
+
+  .card-elevated {
+    @apply shadow-card;
+  }
+
+  .card-compact {
+    @apply rounded-md border border-card-border/80;
+  }
+
+  /* === Glassmorphism === */
+  .glass {
+    @apply bg-card/70 backdrop-blur-xl border border-white/[0.08];
+  }
+
+  .glass-subtle {
+    @apply bg-card/50 backdrop-blur-lg border border-card-border;
+  }
+
+  .glass-card {
+    @apply bg-card/60 backdrop-blur-xl border border-card-border/80 rounded-xl;
+    @apply transition-all duration-200 ease-out;
+  }
+
+  .glass-card:hover {
+    @apply border-primary/20 bg-card/70;
+  }
+
+  /* === Gradient Text === */
+  .gradient-text {
+    @apply bg-gradient-to-r from-pink-400 via-pink-500 to-rose-500
+           bg-clip-text text-transparent;
+  }
+
+  .gradient-text-subtle {
+    @apply bg-gradient-to-r from-pink-300/80 to-rose-400/80
+           bg-clip-text text-transparent;
+  }
+
+  /* === Buttons === */
+  .btn {
+    @apply inline-flex items-center justify-center gap-2
+           font-medium text-sm leading-none
+           px-4 py-2.5 rounded-md
+           transition-all duration-150 ease-out
+           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-2 focus-visible:ring-offset-background
+           disabled:pointer-events-none disabled:opacity-50
+           select-none cursor-pointer;
+  }
+
+  .btn-primary {
+    @apply bg-primary text-primary-foreground
+           hover:bg-primary-hover
+           active:scale-[0.98]
+           shadow-subtle hover:shadow-pink-glow-sm;
+  }
+
+  .btn-secondary {
+    @apply bg-secondary text-secondary-foreground
+           hover:bg-accent-hover
+           border border-border
+           active:scale-[0.98];
+  }
+
+  .btn-ghost {
+    @apply text-muted-foreground
+           hover:bg-accent hover:text-accent-foreground
+           active:scale-[0.98];
+  }
+
+  .btn-outline {
+    @apply bg-transparent text-foreground
+           border border-border
+           hover:bg-accent hover:text-accent-foreground
+           active:scale-[0.98];
+  }
+
+  .btn-danger {
+    @apply bg-error text-white
+           hover:bg-error/90
+           active:scale-[0.98]
+           shadow-error-glow;
+  }
+
+  .btn-success {
+    @apply bg-success text-white
+           hover:bg-success/90
+           active:scale-[0.98]
+           shadow-success-glow;
+  }
+
+  /* Button Sizes */
+  .btn-sm {
+    @apply text-xs px-3 py-1.5 rounded-sm;
+  }
+
+  .btn-lg {
+    @apply text-base px-6 py-3 rounded-lg;
+  }
+
+  /* === Inputs === */
+  .input {
+    @apply w-full px-3 py-2.5
+           bg-secondary border border-border rounded-md
+           text-foreground text-sm
+           placeholder:text-muted-foreground/70
+           transition-all duration-150 ease-out
+           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:border-primary
+           disabled:cursor-not-allowed disabled:opacity-50;
+  }
+
+  .input-subtle {
+    @apply bg-transparent border-0 border-b rounded-none px-0
+           focus-visible:ring-0 focus-visible:border-primary;
+  }
+
+  /* === Data Tables === */
+  .table-container {
+    @apply w-full overflow-hidden rounded-lg border border-card-border;
+  }
+
+  .table {
+    @apply w-full text-sm;
+  }
+
+  .table thead {
+    @apply bg-secondary/50 border-b border-card-border;
+  }
+
+  .table thead th {
+    @apply px-4 py-3 text-left font-medium text-muted-foreground text-xs uppercase tracking-wider;
+  }
+
+  .table tbody tr {
+    @apply border-b border-card-border/50 last:border-0
+           transition-colors duration-150 ease-out
+           hover:bg-accent/50;
+  }
+
+  .table tbody td {
+    @apply px-4 py-3;
+  }
+
+  /* === Badges === */
+  .badge {
+    @apply inline-flex items-center gap-1
+           px-2 py-0.5 rounded-full
+           text-xs font-medium
+           transition-colors duration-150;
+  }
+
+  .badge-success {
+    @apply bg-success/15 text-success;
+  }
+
+  .badge-error {
+    @apply bg-error/15 text-error;
+  }
+
+  .badge-muted {
+    @apply bg-muted text-muted-foreground;
+  }
+
+  .badge-primary {
+    @apply bg-primary/15 text-primary;
+  }
+
+  .badge-warning {
+    @apply bg-warning/15 text-warning;
+  }
+
+  /* === Price Display === */
+  .price-positive {
+    @apply text-success;
+  }
+
+  .price-negative {
+    @apply text-error;
+  }
+
+  /* === Scrollbar === */
+  .scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--muted-foreground) / 0.25) transparent;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-track {
+    @apply bg-transparent;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    @apply bg-muted-foreground/25 rounded-full;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+    @apply bg-muted-foreground/40;
+  }
+
+  /* === Chart Container === */
+  .chart-container {
+    @apply relative w-full h-full;
+  }
+
+  /* === Divider === */
+  .divider {
+    @apply h-px w-full bg-border my-4;
+  }
+
+  .divider-vertical {
+    @apply w-px h-full bg-border mx-4;
+  }
+
+  /* === Stat Block === */
+  .stat-block {
+    @apply p-4 bg-secondary/40 rounded-md border border-border/60
+           transition-colors duration-150 ease-out
+           hover:bg-secondary/60;
+  }
+
+  /* === Trading Panel Tabs === */
+  .trade-tabs {
+    @apply flex p-1 bg-secondary rounded-md gap-1;
+  }
+
+  .trade-tab {
+    @apply flex-1 py-2.5 rounded-md text-sm font-medium
+           transition-all duration-150 ease-out
+           text-muted-foreground
+           hover:text-foreground;
+  }
+
+  .trade-tab-active-buy {
+    @apply bg-success/90 text-white shadow-subtle;
+  }
+
+  .trade-tab-active-sell {
+    @apply bg-error/90 text-white shadow-subtle;
+  }
+
+  /* === Section Label === */
+  .section-label {
+    @apply text-xs font-medium text-muted-foreground uppercase tracking-wider;
+  }
+
+  /* === Value Display === */
+  .value-mono {
+    @apply font-mono font-medium text-foreground tracking-tight;
+  }
+
+  .value-large {
+    @apply font-mono font-semibold text-foreground tracking-tight;
+  }
+}
+
+/* ====================================================================
+   UTILITY CLASSES
+   ==================================================================== */
 
 @layer utilities {
   .text-balance {
     text-wrap: balance;
   }
-  
-  .price-positive {
-    @apply text-green-500;
+
+  /* Subtle grid pattern for backgrounds */
+  .bg-grid {
+    background-image:
+      linear-gradient(to right, hsl(var(--border) / 0.06) 1px, transparent 1px),
+      linear-gradient(to bottom, hsl(var(--border) / 0.06) 1px, transparent 1px);
+    background-size: 24px 24px;
+    background-repeat: repeat;
+    pointer-events: none;
   }
-  
-  .price-negative {
-    @apply text-red-500;
+
+  /* Dot pattern for backgrounds */
+  .bg-dots {
+    background-image: radial-gradient(hsl(var(--border) / 0.15) 1px, transparent 1px);
+    background-size: 16px 16px;
+    background-repeat: repeat;
+    pointer-events: none;
   }
-  
-  .glass-card {
-    @apply bg-card/50 backdrop-blur-lg border border-border/50;
+
+  /* Shimmer loading effect */
+  .shimmer {
+    @apply bg-gradient-to-r from-secondary via-muted to-secondary bg-[length:200%_100%] animate-shimmer;
   }
-  
-  .gradient-text {
-    @apply bg-gradient-to-r from-red-500 via-red-400 to-pink-500 bg-clip-text text-transparent;
+
+  /* Subtle pink glow border utility */
+  .glow-border {
+    @apply border border-primary/20 shadow-pink-glow-sm;
+  }
+
+  /* Text gradient utility */
+  .text-gradient-pink {
+    @apply bg-gradient-to-b from-pink-300 to-rose-400 bg-clip-text text-transparent;
   }
 }
 
-/* Custom scrollbar */
+/* ====================================================================
+   GLOBAL SCROLLBAR
+   ==================================================================== */
+
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
@@ -84,18 +441,21 @@
 }
 
 ::-webkit-scrollbar-thumb {
-  @apply bg-muted-foreground/30 rounded-full;
+  @apply bg-muted-foreground/25 rounded-full transition-colors;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  @apply bg-muted-foreground/50;
+  @apply bg-muted-foreground/40;
 }
 
-/* Animations */
+/* ====================================================================
+   ANIMATION KEYFRAMES
+   ==================================================================== */
+
 @keyframes fadeIn {
   from {
     opacity: 0;
-    transform: translateY(10px);
+    transform: translateY(8px);
   }
   to {
     opacity: 1;
@@ -106,7 +466,7 @@
 @keyframes slideUp {
   from {
     opacity: 0;
-    transform: translateY(30px);
+    transform: translateY(20px);
   }
   to {
     opacity: 1;
@@ -117,7 +477,7 @@
 @keyframes slideInLeft {
   from {
     opacity: 0;
-    transform: translateX(-30px);
+    transform: translateX(-16px);
   }
   to {
     opacity: 1;
@@ -128,7 +488,7 @@
 @keyframes slideInRight {
   from {
     opacity: 0;
-    transform: translateX(30px);
+    transform: translateX(16px);
   }
   to {
     opacity: 1;
@@ -139,7 +499,7 @@
 @keyframes scaleIn {
   from {
     opacity: 0;
-    transform: scale(0.9);
+    transform: scale(0.97);
   }
   to {
     opacity: 1;
@@ -147,100 +507,94 @@
   }
 }
 
-@keyframes float {
-  0%, 100% {
-    transform: translateY(0px);
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
   }
-  50% {
-    transform: translateY(-10px);
-  }
-}
-
-@keyframes pulse-glow {
-  0%, 100% {
-    box-shadow: 0 0 20px rgba(239, 68, 68, 0.3);
-  }
-  50% {
-    box-shadow: 0 0 40px rgba(239, 68, 68, 0.6);
+  100% {
+    background-position: 200% 0;
   }
 }
 
-@keyframes blink {
-  0%, 100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.6;
-  }
-}
-
-@keyframes pulse-scale {
-  0%, 100% {
-    transform: scale(1);
-  }
-  50% {
-    transform: scale(1.05);
-  }
-}
-
+/* Animation utility classes */
 .animate-fadeIn {
-  animation: fadeIn 0.8s ease-out;
+  animation: fadeIn 0.3s ease-out both;
 }
 
 .animate-slideUp {
-  animation: slideUp 0.8s ease-out;
+  animation: slideUp 0.4s ease-out both;
 }
 
 .animate-slideInLeft {
-  animation: slideInLeft 0.8s ease-out;
+  animation: slideInLeft 0.3s ease-out both;
 }
 
 .animate-slideInRight {
-  animation: slideInRight 0.8s ease-out;
+  animation: slideInRight 0.3s ease-out both;
 }
 
 .animate-scaleIn {
-  animation: scaleIn 0.8s ease-out;
+  animation: scaleIn 0.2s ease-out both;
 }
 
-.animate-float {
-  animation: float 3s ease-in-out infinite;
+/* Kebab-case aliases for animation utilities */
+.animate-fade-in {
+  animation: fadeIn 0.3s ease-out both;
 }
 
-.animate-blink {
-  animation: blink 2s ease-in-out infinite;
+.animate-slide-up {
+  animation: slideUp 0.4s ease-out both;
 }
 
-.animate-pulse-scale {
-  animation: pulse-scale 2s ease-in-out infinite;
+.animate-slide-in-left {
+  animation: slideInLeft 0.3s ease-out both;
 }
 
-.animate-delay-100 {
-  animation-delay: 0.1s;
-  animation-fill-mode: both;
+.animate-slide-in-right {
+  animation: slideInRight 0.3s ease-out both;
 }
 
-.animate-delay-200 {
-  animation-delay: 0.2s;
-  animation-fill-mode: both;
+.animate-scale-in {
+  animation: scaleIn 0.2s ease-out both;
 }
 
-.animate-delay-300 {
-  animation-delay: 0.3s;
-  animation-fill-mode: both;
+/* Animation delay utilities */
+.animate-delay-100 { animation-delay: 100ms; }
+.animate-delay-200 { animation-delay: 200ms; }
+.animate-delay-250 { animation-delay: 250ms; }
+.animate-delay-300 { animation-delay: 300ms; }
+.animate-delay-350 { animation-delay: 350ms; }
+
+/* Card hover lift */
+.card-hover-lift {
+  @apply transition-all duration-200 ease-out;
+}
+.card-hover-lift:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
 }
 
-.animate-delay-400 {
-  animation-delay: 0.4s;
-  animation-fill-mode: both;
+/* Icon hover scale */
+.icon-hover:hover {
+  transform: scale(1.1);
 }
 
-.animate-delay-500 {
-  animation-delay: 0.5s;
-  animation-fill-mode: both;
+/* Shimmer loading effect */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+.animate-shimmer {
+  background: linear-gradient(90deg, hsl(var(--secondary)) 25%, hsl(var(--muted)) 50%, hsl(var(--secondary)) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
 }
 
-.animate-delay-600 {
-  animation-delay: 0.6s;
-  animation-fill-mode: both;
-}
+/* Stagger delays for sequential animations */
+.animate-delay-100 { animation-delay: 0.1s; }
+.animate-delay-150 { animation-delay: 0.15s; }
+.animate-delay-200 { animation-delay: 0.2s; }
+.animate-delay-250 { animation-delay: 0.25s; }
+.animate-delay-300 { animation-delay: 0.3s; }
+.animate-delay-400 { animation-delay: 0.4s; }
+.animate-delay-500 { animation-delay: 0.5s; }

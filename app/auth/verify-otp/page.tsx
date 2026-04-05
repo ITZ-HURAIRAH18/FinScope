@@ -20,8 +20,8 @@ function VerifyOTPForm() {
 export default function VerifyOTPPage() {
   return (
     <Suspense fallback={
-      <main className="min-h-screen bg-black flex items-center justify-center">
-        <div className="text-white">Loading...</div>
+      <main className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-foreground text-sm">Loading...</div>
       </main>
     }>
       <VerifyOTPForm />

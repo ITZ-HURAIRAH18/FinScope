@@ -60,9 +60,10 @@ export function formatPercentage(value: number): string {
 
 /**
  * Get color class based on value (green for positive, red for negative)
+ * Uses design system tokens (text-success/text-error) instead of hardcoded Tailwind colors
  */
 export function getPriceChangeColor(value: number): string {
-  return value >= 0 ? 'text-green-500' : 'text-red-500';
+  return value >= 0 ? 'text-success' : 'text-error';
 }
 
 /**
