@@ -170,15 +170,6 @@ export default function CryptoChart({ symbol }: CryptoChartProps) {
       },
     });
 
-    // ResizeObserver for responsive sizing
-    const resizeObserver = new ResizeObserver((entries) => {
-      for (const entry of entries) {
-        const { width, height } = entry.contentRect;
-        chart.applyOptions({ width, height });
-      }
-    });
-    resizeObserver.observe(chartContainerRef.current);
-
     // Observe theme changes
     const themeObserver = new MutationObserver(() => {
       updateChartTheme();
@@ -188,8 +179,9 @@ export default function CryptoChart({ symbol }: CryptoChartProps) {
       attributeFilter: ['class', 'data-theme'],
     });
 
+    console.log('[Chart] Initialized for', symbol, 'container:', chartContainerRef.current?.getBoundingClientRect());
+
     return () => {
-      resizeObserver.disconnect();
       themeObserver.disconnect();
       chart.remove();
       chartRef.current = null;
@@ -216,6 +208,7 @@ export default function CryptoChart({ symbol }: CryptoChartProps) {
         }
 
         const data = await response.json();
+        console.log('[Chart] API response:', data?.length ?? 'no data', 'records');
 
         const candleData = data.map((d: any) => ({
           time: d[0] / 1000,
@@ -228,12 +221,12 @@ export default function CryptoChart({ symbol }: CryptoChartProps) {
 
         // Set candlestick data
         seriesRef.current?.setData(candleData);
-        
+
         // Set volume data
         const volumeData = candleData.map((candle: any) => ({
           time: candle.time,
           value: candle.volume,
-          color: candle.close >= candle.open 
+          color: candle.close >= candle.open
             ? getCSSColor('--success') + '4D'
             : getCSSColor('--error') + '4D',
         }));
@@ -246,7 +239,9 @@ export default function CryptoChart({ symbol }: CryptoChartProps) {
       }
     };
 
-    fetchData();
+    // Small delay to ensure chart series are fully initialized
+    const timeout = setTimeout(fetchData, 50);
+    return () => clearTimeout(timeout);
   }, [symbol, timeframe]);
 
   const timeframes: Timeframe[] = ['1s', '1m', '5m', '15m', '1h', '1d'];
