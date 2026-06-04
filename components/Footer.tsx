@@ -9,9 +9,13 @@ export default function Footer() {
                 <path d="M0 11.5L2 9.5L5 10.5L8 6.5L11 8.5L14 3.5L17 5.5L20 1.5L22 2.5L24 0.5V12H0V11.5Z" />
               </svg>
             </div>
-           
+            <a
+              // href="/images/Code.pdf"
+              // download="Code.pdf"
+              className="text-sm text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+            >
               &copy; 2026 FinScope. All rights reserved.
-           
+            </a>
           </div>
           <div className="text-sm text-muted-foreground">
             Developed by{' '}
