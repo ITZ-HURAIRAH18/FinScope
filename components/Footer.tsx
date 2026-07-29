@@ -20,7 +20,7 @@ export default function Footer() {
           <div className="text-sm text-muted-foreground">
             Developed by{' '}
             <a
-              href="https://itz-hurairah.vercel.app/"
+              href="https://abuhurairah.engineer/"
               target="_blank"
               rel="noopener noreferrer"
               className="text-primary hover:text-primary-hover transition-colors font-medium"
