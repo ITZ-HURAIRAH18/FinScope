@@ -15,15 +15,24 @@ interface StockChartProps {
  * Stock price chart backed by /api/stock-chart (Yahoo Finance).
  * Shares the unified MarketChart with the crypto chart — candle/line modes,
  * real volume bars, crosshair legend and honest interval/source labelling.
+ *
+ * Interval per range is the FINEST Yahoo serves reliably for that span, so
+ * every timeframe shows all candles for its range instead of a ~200-point
+ * downsample (user report: "charts show only 200 candles"). MAX deliberately
+ * uses the period1=0 form: Yahoo's `range=max` auto-buckets any interval down
+ * to ~169 points, while an explicit period returns the FULL daily history
+ * (verified live: AAPL ≈ 11,500 daily candles back to 1980).
  */
-const RANGES: Array<ChartRange & { yahooRange: string; interval: string }> = [
+const RANGES: Array<
+  ChartRange & { yahooRange?: string; interval: string; fullHistory?: boolean }
+> = [
   { key: '1d', label: '1D', yahooRange: '1d', interval: '5m' },
-  { key: '5d', label: '5D', yahooRange: '5d', interval: '15m' },
-  { key: '1mo', label: '1M', yahooRange: '1mo', interval: '1h' },
-  { key: '3mo', label: '3M', yahooRange: '3mo', interval: '1d' },
-  { key: '6mo', label: '6M', yahooRange: '6mo', interval: '1d' },
-  { key: '1y', label: '1Y', yahooRange: '1y', interval: '1d' },
-  { key: 'max', label: 'MAX', yahooRange: 'max', interval: '1wk' },
+  { key: '5d', label: '5D', yahooRange: '5d', interval: '5m' },
+  { key: '1mo', label: '1M', yahooRange: '1mo', interval: '30m' },
+  { key: '3mo', label: '3M', yahooRange: '3mo', interval: '60m' },
+  { key: '6mo', label: '6M', yahooRange: '6mo', interval: '60m' },
+  { key: '1y', label: '1Y', yahooRange: '1y', interval: '60m' },
+  { key: 'max', label: 'MAX', interval: '1d', fullHistory: true },
 ];
 
 interface ChartResponse {
@@ -51,9 +60,14 @@ export default function StockChart({ symbol }: StockChartProps) {
     setError(null);
     try {
       const config = RANGES.find((r) => r.key === rangeKey) ?? RANGES[2];
-      const response = await fetch(
-        `/api/stock-chart?symbol=${encodeURIComponent(symbol)}&interval=${config.interval}&range=${config.yahooRange}`
-      );
+      // MAX uses the explicit-period form: Yahoo's `range=max` buckets any
+      // interval down to ~169 points, while period1=0 returns the symbol's
+      // complete daily history.
+      const url = config.fullHistory
+        ? `/api/stock-chart?symbol=${encodeURIComponent(symbol)}&interval=${config.interval}` +
+          `&period1=0&period2=${Math.floor(Date.now() / 1000)}`
+        : `/api/stock-chart?symbol=${encodeURIComponent(symbol)}&interval=${config.interval}&range=${config.yahooRange}`;
+      const response = await fetch(url);
       const payload: ChartResponse | { error: string } | null = await response
         .json()
         .catch(() => null);

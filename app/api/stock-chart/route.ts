@@ -25,8 +25,11 @@ const ALLOWED_RANGES = new Set([
 ]);
 
 // Legacy contract: period1/period2 in unix seconds (still accepted).
+// "0" is additionally accepted for period1 = "as far back as the provider
+// has data" (used by the MAX range to serve the FULL candle history, which
+// Yahoo's `range=max` buckets down to ~169 points).
 function isUnixSeconds(value: string): boolean {
-  return /^\d{9,11}$/.test(value);
+  return value === '0' || /^\d{9,11}$/.test(value);
 }
 
 export async function GET(request: NextRequest) {

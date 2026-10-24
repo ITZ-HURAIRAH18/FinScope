@@ -54,8 +54,11 @@ export default function CryptoChart({ symbol }: CryptoChartProps) {
     setError(null);
     try {
       const pair = `${symbol.toUpperCase()}USDT`;
+      // No `limit` param: the API returns ALL candles for the selected range
+      // (Binance klines with pagination; CoinGecko fallback for blocked
+      // networks). The legacy `limit` param would truncate the series again.
       const response = await fetch(
-        `/api/crypto-chart?symbol=${encodeURIComponent(pair)}&days=${days}&limit=500`
+        `/api/crypto-chart?symbol=${encodeURIComponent(pair)}&days=${days}`
       );
       const payload = await response.json().catch(() => null);
 
