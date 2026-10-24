@@ -78,6 +78,19 @@ const RANGE_TO_BINANCE_INTERVAL: Record<string, string> = {
 
 /** Hard ceiling on total candles served (MAX range of very old coins). */
 const MAX_TOTAL_CANDLES = 5000;
+
+/**
+ * Binance pair aliases for tokens that were renamed on the exchange.
+ * Polygon migrated MATIC → POL (Sept 2024) and Binance renamed the trading
+ * pair, so MATICUSDT has no recent klines — charts must request POLUSDT
+ * (the renamed pair carries the continued history).
+ */
+const BINANCE_PAIR_ALIASES: Record<string, string> = { MATIC: 'POL' };
+
+function binancePair(symbol: string): string {
+  const base = symbol.replace(/USDT$/i, '').toUpperCase();
+  return `${BINANCE_PAIR_ALIASES[base] ?? base}USDT`;
+}
 /** Binance klines page size (their documented maximum per request). */
 const PAGE_SIZE = 1000;
 /** Safety bound: pages per request series (1000 × this = total ceiling). */
@@ -193,7 +206,7 @@ export async function GET(request: NextRequest) {
   // ---------------------------------------------------------------------
   try {
     const interval = RANGE_TO_BINANCE_INTERVAL[String(days)] ?? '1h';
-    const klines = await fetchBinanceKlines(symbol.toUpperCase(), interval, days);
+    const klines = await fetchBinanceKlines(binancePair(symbol), interval, days);
 
     const rangeStartMs =
       days === 'max' ? null : Date.now() - (days as number) * 86_400_000;
