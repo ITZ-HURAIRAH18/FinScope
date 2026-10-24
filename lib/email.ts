@@ -279,6 +279,74 @@ export async function sendPasswordResetEmail(email: string, name: string | null,
   return send(email, `Your FinScope password reset code: ${otp}`, html, text);
 }
 
+/**
+ * Sent when a password reset is requested for an account that HAS no
+ * password to reset (docs/AUDIT-REPORT.md H3 pattern — same approach as the
+ * register flow's "account exists" email):
+ * - `google`: the account signs in with an OAuth provider and has no
+ *   password; the email explains to use "Sign in with Google" instead.
+ * - `unverified`: the account exists but its email was never verified, so a
+ *   password change would be unsafe; the email points back to verification.
+ * The API response stays byte-identical/uniform for every address; only the
+ * mailbox owner ever learns why no reset code was sent.
+ */
+export async function sendPasswordResetGuidanceEmail(
+  email: string,
+  name: string | null,
+  kind: 'google' | 'unverified'
+) {
+  const bodyHtml =
+    kind === 'google'
+      ? `
+      <p style="margin:0 0 4px 0;">Hi ${esc(name) || 'there'},</p>
+      <p style="margin:0;\">We received a request to reset the password for your FinScope account — but this account signs in with <strong>Google</strong> and doesn't have a password.</p>
+      <p style="margin:16px 0 0 0;">Just choose <strong>Sign in with Google</strong> on the sign-in page; no password is needed.</p>
+      ${ctaButton(`${APP_URL}/auth/login`, 'Go to sign in')}
+      <p style="margin:8px 0 0 0;font-size:13px;color:#6B7280;">If you don't recognize this request, you can safely ignore this email — nothing has changed.</p>
+    `
+      : `
+      <p style="margin:0 0 4px 0;">Hi ${esc(name) || 'there'},</p>
+      <p style="margin:0;\">We received a request to reset the password for your FinScope account — but your email address hasn't been verified yet, so a password change isn't possible.</p>
+      <p style="margin:16px 0 0 0;">Open the sign-in page and request a new <strong>verification code</strong> to activate your account first. Once verified, you can reset your password here.</p>
+      ${ctaButton(`${APP_URL}/auth/login`, 'Go to sign in')}
+      <p style="margin:8px 0 0 0;font-size:13px;color:#6B7280;">If you don't recognize this request, you can safely ignore this email — nothing has changed.</p>
+    `;
+  const html = renderEmail({
+    preheader:
+      kind === 'google'
+        ? 'Your FinScope account uses Google Sign-In — no password reset is needed.'
+        : 'Verify your FinScope email first, then you can reset your password.',
+    heading:
+      kind === 'google'
+        ? 'Your account uses Google Sign-In'
+        : 'Verify your email to continue',
+    bodyHtml,
+  });
+  const text = textBody(
+    kind === 'google'
+      ? [
+          'Your account uses Google Sign-In',
+          `Hi ${name || 'there'}, your FinScope account signs in with Google and has no password — no reset is needed.`,
+          'Use "Sign in with Google" on the sign-in page: ' + `${APP_URL}/auth/login`,
+          "If you didn't make this request, ignore this email — nothing has changed.",
+        ]
+      : [
+          'Verify your email to continue',
+          `Hi ${name || 'there'}, your FinScope email isn't verified yet, so a password reset isn't possible.`,
+          'Request a new verification code on the sign-in page: ' + `${APP_URL}/auth/login`,
+          "If you didn't make this request, ignore this email — nothing has changed.",
+        ]
+  );
+  return send(
+    email,
+    kind === 'google'
+      ? 'Your FinScope account uses Google Sign-In'
+      : 'Verify your FinScope email to continue',
+    html,
+    text
+  );
+}
+
 /** Security notification sent AFTER a successful password change. */
 export async function sendPasswordChangedEmail(email: string, name: string | null) {
   const html = renderEmail({

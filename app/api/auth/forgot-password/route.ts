@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { generateOTP, hashOTP, sendPasswordResetEmail } from '@/lib/email';
+import {
+  generateOTP,
+  hashOTP,
+  sendPasswordResetEmail,
+  sendPasswordResetGuidanceEmail,
+} from '@/lib/email';
 import { rateLimit, clientIp } from '@/lib/rate-limit';
 
 /**
@@ -41,6 +46,12 @@ function rateLimitResponse(retryAfterSec: number) {
     { error: 'Too many attempts. Please try again later.', retryAfterSec },
     { status: 429, headers: { 'Retry-After': String(retryAfterSec) } }
   );
+}
+
+/** Masked address for server logs (never log full emails). */
+function maskEmail(email: string): string {
+  const [local, domain] = email.split('@');
+  return `${local.slice(0, 3)}***@${domain}`;
 }
 
 export async function POST(request: NextRequest) {
@@ -85,9 +96,27 @@ export async function POST(request: NextRequest) {
 
     // Only a VERIFIED account that actually has a password may reset. All
     // other cases still return `uniform` so the API reveals nothing.
-    // (Unverified users re-run the normal verification flow instead; OAuth-only
-    // users sign in with their provider and have no password to reset.)
-    if (!user || !user.emailVerified || !user.password) {
+    if (!user) {
+      console.log(
+        `[Forgot-password] no account for ${maskEmail(normalizedEmail)} — uniform response, nothing sent`
+      );
+      return uniform;
+    }
+    if (!user.emailVerified || !user.password) {
+      // Owner-allowable feedback (H3): the mailbox owner — and only they —
+      // learns why no code was sent. Google accounts have no password to
+      // reset; unverified accounts must verify first. The API answer is
+      // still the uniform one. Mirrors the register flow's account-exists
+      // email. (Best-effort: a failure here never changes the response.)
+      const kind: 'google' | 'unverified' = !user.password ? 'google' : 'unverified';
+      console.log(
+        `[Forgot-password] ${kind === 'google' ? 'no password (OAuth sign-in)' : 'unverified account'} for ${maskEmail(normalizedEmail)} — guidance email`
+      );
+      try {
+        await sendPasswordResetGuidanceEmail(normalizedEmail, user.name, kind);
+      } catch (emailError) {
+        console.error('Error sending password-reset guidance email:', emailError);
+      }
       return uniform;
     }
 
@@ -103,6 +132,7 @@ export async function POST(request: NextRequest) {
 
     try {
       await sendPasswordResetEmail(normalizedEmail, user.name, otp);
+      console.log(`[Forgot-password] reset code emailed to ${maskEmail(normalizedEmail)}`);
     } catch (emailError) {
       // The uniform 200 must not leak that an email was (or wasn't) attempted.
       console.error('Error sending password-reset email:', emailError);
