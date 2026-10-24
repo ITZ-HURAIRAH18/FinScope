@@ -53,7 +53,11 @@ export default function RegisterPage() {
       }
 
       setError('');
-      router.push(`/auth/verify-email?email=${encodeURIComponent(email)}`);
+      // Carry the countdown anchor in the URL so the verify page can start
+      // its timer without a status-probing server call (audit H3/S5).
+      const expiresIn = typeof data.expiresIn === 'number' ? data.expiresIn : 600;
+      const exp = Date.now() + expiresIn * 1000;
+      router.push(`/auth/verify-email?email=${encodeURIComponent(email)}&exp=${exp}`);
     } catch (error) {
       setError('Something went wrong');
       setIsLoading(false);

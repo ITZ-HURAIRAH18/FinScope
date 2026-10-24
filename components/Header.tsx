@@ -4,18 +4,82 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import AuthButton from "@/components/auth/AuthButton";
+import ThemeToggle from "@/components/ThemeToggle";
+import { binanceWS, BinanceConnectionStatus } from "@/lib/binance-websocket";
+import { getFinnhubWS, FinnhubConnectionStatus } from "@/lib/finnhub-websocket";
 
 interface HeaderProps {
   activePage?: "home" | "markets" | "analytics" | "news" | "watchlist" | "portfolio" | "profile";
 }
 
+type LiveState = "standby" | "connecting" | "live" | "polling" | "offline";
+
+function combineStatuses(
+  crypto: BinanceConnectionStatus,
+  stocks: FinnhubConnectionStatus
+): LiveState {
+  // At least one stream over a live WebSocket → green "Live".
+  if (crypto === "connected" || stocks === "connected") return "live";
+  // Crypto WS down but REST fallback still delivering 10s snapshots
+  // (only the Binance client has a polling state).
+  if (crypto === "polling") return "polling";
+  // A connection attempt is in flight.
+  if (crypto === "connecting" || stocks === "connecting") return "connecting";
+  // Streams previously active but now down (or token rejected).
+  if (crypto === "disconnected" || stocks === "disconnected" || stocks === "unauthorized") {
+    return "offline";
+  }
+  // Nothing ever connected on this page (e.g. /profile, /news).
+  return "standby";
+}
+
+const LIVE_LABELS: Record<LiveState, { text: string; dot: string; ping: string }> = {
+  live: { text: "Live", dot: "bg-success", ping: "bg-success" },
+  polling: { text: "Live · 10s", dot: "bg-warning", ping: "bg-warning" },
+  connecting: { text: "Connecting…", dot: "bg-warning", ping: "bg-warning" },
+  offline: { text: "Offline", dot: "bg-error", ping: "bg-error" },
+  standby: { text: "Data on Markets", dot: "bg-muted-foreground", ping: "bg-muted-foreground" },
+};
+
 export default function Header({ activePage = "home" }: HeaderProps) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [cryptoStatus, setCryptoStatus] = useState<BinanceConnectionStatus>("idle");
+  const [stockStatus, setStockStatus] = useState<FinnhubConnectionStatus>("idle");
+  const liveState = combineStatuses(cryptoStatus, stockStatus);
   const pathname = usePathname();
 
   useEffect(() => {
     setIsMobileMenuOpen(false);
   }, [pathname]);
+
+  // M6: the indicator used to be hard-coded green regardless of connection
+  // state. Subscribe to both stream clients and render their real status.
+  useEffect(() => {
+    let unsubFinnhub: (() => void) | undefined;
+    let cancelled = false;
+
+    const unsubBinance = binanceWS.onStatus(() => {
+      setCryptoStatus(binanceWS.getStatus());
+    });
+
+    getFinnhubWS()
+      .then((ws) => {
+        if (cancelled) return;
+        unsubFinnhub = ws.subscribeStatus(() => {
+          setStockStatus(ws.getStatus());
+        });
+      })
+      .catch(() => {
+        // No token (e.g. unauthenticated pages) — the crypto stream alone
+        // still drives the indicator.
+      });
+
+    return () => {
+      cancelled = true;
+      unsubBinance();
+      unsubFinnhub?.();
+    };
+  }, []);
 
   useEffect(() => {
     if (isMobileMenuOpen) {
@@ -28,6 +92,16 @@ export default function Header({ activePage = "home" }: HeaderProps) {
     };
   }, [isMobileMenuOpen]);
 
+  // M6: Escape closes the mobile menu (standard disclosure behavior).
+  useEffect(() => {
+    if (!isMobileMenuOpen) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setIsMobileMenuOpen(false);
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [isMobileMenuOpen]);
+
   const navLinks = [
     { href: "/", label: "Home", page: "home" },
     { href: "/dashboard", label: "Markets", page: "markets" },
@@ -36,6 +110,24 @@ export default function Header({ activePage = "home" }: HeaderProps) {
     { href: "/watchlist", label: "Watchlist", page: "watchlist" },
     { href: "/portfolio", label: "Portfolio", page: "portfolio" },
   ];
+
+  const live = LIVE_LABELS[liveState];
+
+  const StatusIndicator = ({ className = "" }: { className?: string }) => (
+    <div
+      className={`flex items-center gap-1.5 text-xs text-muted-foreground ${className}`}
+      role="status"
+      aria-live="polite"
+    >
+      <span className="relative flex h-2 w-2">
+        {liveState !== "standby" && (
+          <span className={`animate-ping absolute inline-flex h-full w-full rounded-full ${live.ping} opacity-75`}></span>
+        )}
+        <span className={`relative inline-flex rounded-full h-2 w-2 ${live.dot}`}></span>
+      </span>
+      <span>{live.text}</span>
+    </div>
+  );
 
   return (
     <header className="border-b border-border/60 backdrop-blur-xl bg-background/80 sticky top-0 z-50">
@@ -73,20 +165,16 @@ export default function Header({ activePage = "home" }: HeaderProps) {
           {/* Auth + Mobile Toggle */}
           <div className="flex items-center gap-2">
             <div className="hidden md:flex items-center gap-3">
-              {/* Status indicator */}
-              <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                <span className="relative flex h-2 w-2">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-success opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-success"></span>
-                </span>
-                <span>Live</span>
-              </div>
+              <StatusIndicator />
+              <ThemeToggle />
               <AuthButton />
             </div>
             <button
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
               className="md:hidden p-2 text-muted-foreground hover:text-foreground hover:bg-accent rounded-md transition-colors"
               aria-label="Toggle mobile menu"
+              aria-expanded={isMobileMenuOpen}
+              aria-controls="mobile-menu"
             >
               {isMobileMenuOpen ? (
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
@@ -102,9 +190,11 @@ export default function Header({ activePage = "home" }: HeaderProps) {
         </div>
       </div>
 
-      {/* Mobile Menu */}
+      {/* Mobile Menu — relative+z keeps it ABOVE the click-catcher overlay
+          (the old -z-10 rendered the overlay behind page content instead). */}
       <div
-        className={`md:hidden transition-all duration-300 ease-in-out border-t border-border/60 ${
+        id="mobile-menu"
+        className={`md:hidden relative z-10 transition-all duration-300 ease-in-out border-t border-border/60 ${
           isMobileMenuOpen
             ? "max-h-screen opacity-100"
             : "max-h-0 opacity-0 overflow-hidden"
@@ -125,13 +215,9 @@ export default function Header({ activePage = "home" }: HeaderProps) {
             </Link>
           ))}
           <div className="pt-3 mt-3 border-t border-border/60">
-            {/* Mobile status indicator */}
-            <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-3 px-3">
-              <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-success opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-success"></span>
-              </span>
-              <span>Live market data</span>
+            <div className="flex items-center justify-between px-3 mb-3">
+              <StatusIndicator />
+              <ThemeToggle />
             </div>
             <AuthButton />
           </div>
@@ -140,8 +226,9 @@ export default function Header({ activePage = "home" }: HeaderProps) {
 
       {isMobileMenuOpen && (
         <div
-          className="md:hidden fixed inset-0 bg-background/60 backdrop-blur-sm -z-10"
+          className="md:hidden fixed inset-0 bg-background/60 backdrop-blur-sm z-0"
           onClick={() => setIsMobileMenuOpen(false)}
+          aria-hidden="true"
         />
       )}
     </header>

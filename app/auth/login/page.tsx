@@ -18,8 +18,11 @@ function LoginForm() {
   useEffect(() => {
     const verified = searchParams.get('verified');
     const errorParam = searchParams.get('error');
+    const resetParam = searchParams.get('reset');
 
-    if (verified === 'success') {
+    if (resetParam === 'success') {
+      setSuccess('Password reset successfully! You can now sign in.');
+    } else if (verified === 'success') {
       setSuccess('Email verified successfully! You can now log in.');
     } else if (verified === 'already') {
       setSuccess('Email already verified. You can log in.');
@@ -47,6 +50,10 @@ function LoginForm() {
         if (result.error.includes('verify your email')) {
           router.push(`/auth/verify-otp?email=${encodeURIComponent(email)}`);
           return;
+        } else if (result.error.toLowerCase().includes('too many login attempts')) {
+          // Surface the throttle message from lib/auth.ts instead of masking
+          // it as a bad password (H2 — users need to know to wait).
+          setError(result.error);
         } else {
           setError('Invalid email or password');
         }
@@ -117,6 +124,15 @@ function LoginForm() {
                 required
                 placeholder="&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;"
               />
+
+              <div className="text-right -mt-1.5">
+                <Link
+                  href="/auth/forgot-password"
+                  className="text-xs text-muted-foreground hover:text-primary transition-colors"
+                >
+                  Forgot password?
+                </Link>
+              </div>
 
               <Button type="submit" variant="primary" size="lg" className="w-full" disabled={isLoading}>
                 {isLoading ? 'Signing in...' : 'Sign In'}

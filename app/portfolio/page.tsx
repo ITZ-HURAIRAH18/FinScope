@@ -6,6 +6,8 @@ import Link from 'next/link';
 import Header from '@/components/Header';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { fetchPortfolio } from '@/store/slices/portfolioSlice';
+import { useMarketStream } from '@/hooks/useMarketStream';
+import { usePriceSnapshot } from '@/hooks/usePriceSnapshot';
 import { formatCurrency, getPriceChangeColor, formatPercentage } from '@/lib/utils';
 import PortfolioSummary from '@/components/trading/PortfolioSummary';
 import TransactionHistory from '@/components/trading/TransactionHistory';
@@ -14,14 +16,29 @@ import { Card, CardContent, CardHeader, CardTitle, Button, Badge } from '@/compo
 export default function PortfolioPage() {
   const { data: session, status } = useSession();
   const dispatch = useAppDispatch();
-  const { holdings, loading } = useAppSelector((state) => state.portfolio);
+  const { holdings, loading, error } = useAppSelector((state) => state.portfolio);
   const { cryptoPrices, stockPrices } = useAppSelector((state) => state.market);
+
+  // S4: this page previously opened no stream, so Current Value / P&L / P&L %
+  // rendered "-" (or worse, NaN%) on direct navigation.
+  useMarketStream();
+  const fetchSnapshot = usePriceSnapshot();
 
   useEffect(() => {
     if (session?.user) {
       dispatch(fetchPortfolio());
     }
   }, [session, dispatch]);
+
+  // One-shot REST prices for any holding outside the streams' fixed symbol
+  // lists — runs whenever holdings change (initial load, after a trade).
+  useEffect(() => {
+    if (holdings.length === 0) return;
+    fetchSnapshot({
+      crypto: holdings.filter((h) => h.type === 'CRYPTO').map((h) => h.symbol),
+      stocks: holdings.filter((h) => h.type !== 'CRYPTO').map((h) => h.symbol),
+    });
+  }, [holdings, fetchSnapshot]);
 
   if (status === 'loading') {
     return (
@@ -66,6 +83,19 @@ export default function PortfolioPage() {
           <CardContent className="p-0">
             {loading ? (
               <div className="text-center py-12 text-sm text-muted-foreground">Loading...</div>
+            ) : error ? (
+              /* S4: a failed fetch used to show the "no holdings" empty state —
+                 the opposite of the truth. Show the error with a retry instead. */
+              <div className="text-center py-12">
+                <p className="text-sm text-error mb-4">{error}</p>
+                <Button
+                  variant="primary"
+                  size="sm"
+                  onClick={() => dispatch(fetchPortfolio())}
+                >
+                  Retry
+                </Button>
+              </div>
             ) : holdings.length === 0 ? (
               <div className="text-center py-12">
                 <svg className="w-12 h-12 mx-auto mb-4 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
@@ -100,7 +130,9 @@ export default function PortfolioPage() {
                       const currentValue = currentPrice ? holding.quantity * currentPrice : 0;
                       const totalCost = holding.quantity * holding.averageBuyPrice;
                       const pl = currentValue - totalCost;
-                      const plPercent = (pl / totalCost) * 100;
+                      // Guard against division by zero (dust holdings could
+                      // produce ±Infinity%/NaN% rendered straight into the UI).
+                      const plPercent = totalCost > 0 ? (pl / totalCost) * 100 : 0;
 
                       return (
                         <tr key={holding.id} className="border-b border-card-border/50 last:border-0 hover:bg-accent/50 transition-colors duration-150">

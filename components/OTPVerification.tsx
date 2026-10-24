@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Button, Input, Card, CardContent } from '@/components/ui';
@@ -8,61 +8,52 @@ import { Button, Input, Card, CardContent } from '@/components/ui';
 interface OTPVerificationProps {
   email: string;
   mode?: 'signup' | 'login';
+  /** Expiry anchor (epoch ms) issued by register/resend and carried in the URL.
+   *  Absent in the login flow — we then start a fresh local 10-minute window
+   *  (the server remains the authority on real expiry). */
+  expiresAt?: number | null;
 }
 
-export default function OTPVerification({ email, mode = 'signup' }: OTPVerificationProps) {
+const OTP_TTL_SEC = 600;
+
+export default function OTPVerification({ email, mode = 'signup', expiresAt = null }: OTPVerificationProps) {
   const router = useRouter();
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isResending, setIsResending] = useState(false);
-  const [timeLeft, setTimeLeft] = useState<number | null>(null);
-  const [isFetchingTime, setIsFetchingTime] = useState(true);
+  const [timeLeft, setTimeLeft] = useState<number>(OTP_TTL_SEC);
+  /** Suppresses the "expired" banner until the initial window has run down. */
+  const [hasStarted, setHasStarted] = useState(false);
+
+  // Countdown is anchored locally (audit S5: the old server-timer GET could
+  // fail and leave timeLeft === null forever, permanently disabling BOTH
+  // buttons with no retry path). The server still enforces the real expiry
+  // on submit; this clock only drives the UI.
+  const anchorRef = useRef<number>(expiresAt ?? Date.now() + OTP_TTL_SEC * 1000);
 
   useEffect(() => {
-    const fetchRemainingTime = async () => {
-      try {
-        const response = await fetch(`/api/auth/verify-email?email=${encodeURIComponent(email)}`);
-        const data = await response.json();
-
-        if (response.ok && data.remainingSeconds !== undefined) {
-          setTimeLeft(data.remainingSeconds);
-        }
-      } catch (error) {
-        console.error('Error fetching remaining time:', error);
-      } finally {
-        setIsFetchingTime(false);
-      }
-    };
-
-    fetchRemainingTime();
-  }, [email]);
-
-  useEffect(() => {
-    if (isFetchingTime || timeLeft === null) return;
-
-    if (timeLeft <= 0) {
-      if (mode === 'signup') {
-        setError('Your verification time has expired. Your account has been deleted. Please register again.');
-      } else {
-        setError('Your verification time has expired. Please request a new code.');
-      }
-      return;
-    }
+    anchorRef.current = expiresAt ?? Date.now() + OTP_TTL_SEC * 1000;
+    setTimeLeft(Math.max(0, Math.floor((anchorRef.current - Date.now()) / 1000)));
+    setHasStarted(true);
 
     const timer = setInterval(() => {
-      setTimeLeft((prev) => (prev !== null && prev > 0 ? prev - 1 : 0));
+      setTimeLeft(Math.max(0, Math.floor((anchorRef.current - Date.now()) / 1000)));
     }, 1000);
-
     return () => clearInterval(timer);
-  }, [timeLeft, mode, isFetchingTime]);
+  }, [expiresAt]);
 
   const formatTime = (seconds: number | null) => {
     if (seconds === null) return '--:--';
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  const setFreshWindow = (seconds: number) => {
+    anchorRef.current = Date.now() + seconds * 1000;
+    setTimeLeft(seconds);
   };
 
   const handleChange = (index: number, value: string) => {
@@ -152,11 +143,7 @@ export default function OTPVerification({ email, mode = 'signup' }: OTPVerificat
 
       setSuccess('New OTP sent to your email!');
       setOtp(['', '', '', '', '', '']);
-      if (data.remainingSeconds !== undefined) {
-        setTimeLeft(data.remainingSeconds);
-      } else {
-        setTimeLeft(600);
-      }
+      setFreshWindow(data.remainingSeconds ?? OTP_TTL_SEC);
       setIsResending(false);
     } catch (error) {
       console.error('Resend error:', error);
@@ -202,16 +189,17 @@ export default function OTPVerification({ email, mode = 'signup' }: OTPVerificat
             <div className="text-center">
               <p className="text-xs text-muted-foreground">
                 Time remaining:{' '}
-                {isFetchingTime ? (
-                  <span className="font-mono">Loading...</span>
-                ) : (
-                  <span className={`font-mono font-medium ${timeLeft !== null && timeLeft <= 0 ? 'text-error' : 'text-primary'}`}>
-                    {formatTime(timeLeft)}
-                  </span>
-                )}
+                <span className={`font-mono font-medium ${timeLeft <= 0 ? 'text-error' : 'text-primary'}`}>
+                  {formatTime(timeLeft)}
+                </span>
               </p>
-              {mode === 'signup' && (
+              {mode === 'signup' && hasStarted && timeLeft > 0 && (
                 <p className="text-xs text-muted-foreground mt-1">Account will be deleted if not verified</p>
+              )}
+              {hasStarted && timeLeft <= 0 && (
+                <p className="text-xs text-error mt-1">
+                  Your code has expired. Request a new one below — you can keep verifying.
+                </p>
               )}
             </div>
 
@@ -247,18 +235,20 @@ export default function OTPVerification({ email, mode = 'signup' }: OTPVerificat
                 ))}
               </div>
 
-              <Button type="submit" variant="primary" size="lg" className="w-full" disabled={isLoading || otp.join('').length !== 6 || timeLeft === null || timeLeft <= 0}>
+              <Button type="submit" variant="primary" size="lg" className="w-full" disabled={isLoading || otp.join('').length !== 6 || timeLeft <= 0}>
                 {isLoading ? 'Verifying...' : 'Verify Email'}
               </Button>
             </form>
 
-            {/* Resend */}
+            {/* Resend — deliberately NOT gated on the countdown (audit S5):
+                when the code expires this is the user's only way out, so it
+                must stay clickable. Server-side throttle (3/hour) still applies. */}
             <div className="text-center">
               <p className="text-xs text-muted-foreground">
                 Didn&apos;t receive the code?{' '}
                 <button
                   onClick={handleResend}
-                  disabled={isResending || timeLeft === null || timeLeft <= 0}
+                  disabled={isResending}
                   className="text-primary hover:text-primary-hover transition-colors font-medium disabled:opacity-50"
                 >
                   {isResending ? 'Sending...' : 'Resend OTP'}

@@ -8,11 +8,8 @@ import {
   setActiveMarket,
   setSearchQuery,
   setSortField,
-  updateCryptoPrices,
-  updateStockPrices,
 } from "@/store/slices/marketSlice";
-import { binanceWS } from "@/lib/binance-websocket";
-import { getFinnhubWS } from "@/lib/finnhub-websocket";
+import { useMarketStream } from "@/hooks/useMarketStream";
 import { formatLargeNumber, formatPercentage } from "@/lib/utils";
 import MarketTable from "@/components/markets/MarketTable";
 import LoadingScreen from "@/components/LoadingScreen";
@@ -33,35 +30,11 @@ function DashboardContent() {
     }
   }, [searchParams, dispatch]);
 
+  useMarketStream();
+
   useEffect(() => {
-    binanceWS.connect();
-    const unsubBinance = binanceWS.subscribe((prices) => {
-      dispatch(updateCryptoPrices(prices));
-    });
-
-    // Initialize Finnhub WebSocket with async token fetch
-    const initFinnhub = async () => {
-      const finnhubAPIKey = process.env.NEXT_PUBLIC_FINNHUB_API_KEY || "";
-      const finnhubWS = await getFinnhubWS(finnhubAPIKey);
-      finnhubWS.connect();
-      const unsubFinnhub = finnhubWS.subscribe((prices) => {
-        dispatch(updateStockPrices(prices));
-      });
-
-      // Store cleanup function
-      (window as any).__dashboardFinnhubCleanup = unsubFinnhub;
-    };
-
-    initFinnhub();
     setIsInitialized(true);
-
-    return () => {
-      unsubBinance();
-      const cleanup = (window as any).__dashboardFinnhubCleanup;
-      if (cleanup) cleanup();
-      binanceWS.disconnect();
-    };
-  }, [dispatch]);
+  }, []);
 
   if (!isInitialized) {
     return <LoadingScreen />;

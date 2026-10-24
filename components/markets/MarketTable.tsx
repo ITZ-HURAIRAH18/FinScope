@@ -114,39 +114,97 @@ function MarketTable({ type }: MarketTableProps) {
           <table className="w-full">
             <thead>
               <tr className="border-b border-card-border bg-secondary/30">
-                <th className="text-left px-4 py-3 text-xs font-semibold text-foreground/80 uppercase tracking-wider">
-                  Symbol
-                </th>
-                <th 
-                  className="text-right px-4 py-3 text-xs font-semibold text-foreground/80 uppercase tracking-wider cursor-pointer select-none group"
-                  onClick={() => handleSort('price')}
+                {/* M6 a11y: sortable headers are real buttons (keyboard
+                    operable), th carries aria-sort, rows are reachable via the
+                    focusable symbol control. */}
+                <th
+                  scope="col"
+                  aria-sort={
+                    activeSortField === "name"
+                      ? activeSortOrder === "asc"
+                        ? "ascending"
+                        : "descending"
+                      : "none"
+                  }
+                  className="text-left px-4 py-3 text-xs font-semibold text-foreground/80 uppercase tracking-wider"
                 >
-                  <span className="inline-flex items-center">Price<SortIcon field="price" /></span>
+                  <button
+                    type="button"
+                    onClick={() => handleSort("name")}
+                    className="inline-flex items-center cursor-pointer select-none group focus-visible:outline-2 focus-visible:outline-primary rounded"
+                  >
+                    Symbol<SortIcon field="name" />
+                  </button>
                 </th>
-                <th 
-                  className="text-right px-4 py-3 text-xs font-semibold text-foreground/80 uppercase tracking-wider cursor-pointer select-none group"
-                  onClick={() => handleSort('change')}
+                <th
+                  scope="col"
+                  aria-sort={
+                    activeSortField === "price"
+                      ? activeSortOrder === "asc"
+                        ? "ascending"
+                        : "descending"
+                      : "none"
+                  }
+                  className="text-right px-4 py-3 text-xs font-semibold text-foreground/80 uppercase tracking-wider"
                 >
-                  <span className="inline-flex items-center">24h Change<SortIcon field="change" /></span>
+                  <button
+                    type="button"
+                    onClick={() => handleSort("price")}
+                    className="inline-flex items-center cursor-pointer select-none group focus-visible:outline-2 focus-visible:outline-primary rounded"
+                  >
+                    Price<SortIcon field="price" />
+                  </button>
                 </th>
-                <th className="text-right px-4 py-3 text-xs font-semibold text-foreground/80 uppercase tracking-wider">
+                <th
+                  scope="col"
+                  aria-sort={
+                    activeSortField === "change"
+                      ? activeSortOrder === "asc"
+                        ? "ascending"
+                        : "descending"
+                      : "none"
+                  }
+                  className="text-right px-4 py-3 text-xs font-semibold text-foreground/80 uppercase tracking-wider"
+                >
+                  <button
+                    type="button"
+                    onClick={() => handleSort("change")}
+                    className="inline-flex items-center cursor-pointer select-none group focus-visible:outline-2 focus-visible:outline-primary rounded"
+                  >
+                    24h Change<SortIcon field="change" />
+                  </button>
+                </th>
+                <th scope="col" className="text-right px-4 py-3 text-xs font-semibold text-foreground/80 uppercase tracking-wider">
                   24h %
                 </th>
                 {type === "crypto" && (
                   <>
-                    <th className="text-right px-4 py-3 text-xs font-semibold text-foreground/70 uppercase tracking-wider">
+                    <th scope="col" className="text-right px-4 py-3 text-xs font-semibold text-foreground/70 uppercase tracking-wider">
                       24h High
                     </th>
-                    <th className="text-right px-4 py-3 text-xs font-semibold text-foreground/70 uppercase tracking-wider">
+                    <th scope="col" className="text-right px-4 py-3 text-xs font-semibold text-foreground/70 uppercase tracking-wider">
                       24h Low
                     </th>
                   </>
                 )}
-                <th 
-                  className="text-right px-4 py-3 text-xs font-semibold text-foreground/70 uppercase tracking-wider cursor-pointer select-none group"
-                  onClick={() => handleSort('volume')}
+                <th
+                  scope="col"
+                  aria-sort={
+                    activeSortField === "volume"
+                      ? activeSortOrder === "asc"
+                        ? "ascending"
+                        : "descending"
+                      : "none"
+                  }
+                  className="text-right px-4 py-3 text-xs font-semibold text-foreground/70 uppercase tracking-wider"
                 >
-                  <span className="inline-flex items-center">Volume<SortIcon field="volume" /></span>
+                  <button
+                    type="button"
+                    onClick={() => handleSort("volume")}
+                    className="inline-flex items-center cursor-pointer select-none group focus-visible:outline-2 focus-visible:outline-primary rounded"
+                  >
+                    Volume<SortIcon field="volume" />
+                  </button>
                 </th>
               </tr>
             </thead>
@@ -179,7 +237,7 @@ function MarketTable({ type }: MarketTableProps) {
                               src={`https://financialmodelingprep.com/image-stock/${
                                 item.symbol === 'OANDA:XAU_USD' ? 'GLD' : item.symbol
                               }.png`}
-                              alt={item.symbol}
+                              alt=""
                               className="w-7 h-7 rounded-md mr-2.5 bg-secondary object-cover"
                               onError={(e) => {
                                 const target = e.currentTarget as HTMLImageElement;
@@ -189,9 +247,21 @@ function MarketTable({ type }: MarketTableProps) {
                           )}
                         </div>
                         <div>
-                          <div className="text-sm font-semibold text-foreground">
+                          {/* Keyboard entry point for the row (M6): the whole
+                              <tr> stays clickable for mouse users, but this
+                              button makes each row reachable with Tab and
+                              activatable with Enter/Space. */}
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleRowClick(item.symbol);
+                            }}
+                            className="text-sm font-semibold text-foreground hover:text-primary transition-colors focus-visible:outline-2 focus-visible:outline-primary rounded text-left"
+                            aria-label={`Open ${item.symbol} details`}
+                          >
                             {item.symbol === 'OANDA:XAU_USD' ? 'Gold' : item.symbol}
-                          </div>
+                          </button>
                           {item.symbol === 'OANDA:XAU_USD' && (
                             <div className="text-xs text-muted-foreground mt-0.5">Spot</div>
                           )}

@@ -16,8 +16,21 @@ model User {
   name                   String?
   email                  String        @unique
   emailVerified          DateTime?
+  /// bcrypt hash of the current OTP (never plaintext — audit H2).
   emailVerificationToken String?       @unique
   tokenExpires           DateTime?
+  /// Failed OTP verification attempts for the current code (audit H2).
+  otpAttempts            Int           @default(0)
+  /// After too many failed attempts, verification is locked until this time.
+  otpLockedUntil         DateTime?
+  /// bcrypt hash of the current password-reset OTP (never plaintext).
+  passwordResetToken     String?       @unique
+  /// Expiry of the password-reset OTP.
+  passwordResetExpires   DateTime?
+  /// Failed password-reset OTP attempts for the current code.
+  resetAttempts          Int           @default(0)
+  /// After too many failed attempts, reset is locked until this time.
+  resetLockedUntil       DateTime?
   image                  String?
   password               String?
   balance                Float         @default(100000.00)

@@ -24,24 +24,28 @@ Built with **Next.js 15**, **TypeScript**, **Redux Toolkit**, **Prisma**, and **
 ### 📈 Analytics & Insights
 - **Interactive Charts** - TradingView-style charts with multiple timeframes (1D, 1W, 1M, 3M, 1Y)
 - **Market Analytics** - Top gainers, losers, and trending assets
-- **News Feed** - Latest financial news with category filtering (General, Crypto, Stock)
+- **Fear & Greed Index** - Real crypto sentiment gauge (alternative.me), 30-day trend, clearly labeled as provider data
+- **Technical Insights** - RSI-14, SMA-20, MACD (12/26/9) and Bollinger Bands computed from real OHLC candles, with documented methodology
+- **News Feed** - Latest financial news; Crypto/Stock tabs are explicitly keyword-filtered views of the provider's general feed
 - **Watchlists** - Save and track favorite assets across crypto and stocks
 
 ### 🔐 User Features
-- **Secure Authentication** - NextAuth.js with credential and OAuth support
-- **Email Verification with OTP** - 6-digit OTP code sent via email for account verification
-- **Auto-Cleanup System** - Unverified accounts automatically deleted after 10 minutes
+- **Secure Authentication** - NextAuth.js with credentials + email OTP verification
+- **Email Verification with OTP** - `crypto.randomInt` 6-digit code, bcrypt-hashed at rest, 5-attempt lockout, resend throttling
+- **Auto-Cleanup System** - Unverified accounts automatically deleted via cron (Bearer-secret protected)
 - **User Profiles** - Personalized profile management with Cloudinary integration
 - **Protected Routes** - Middleware-based authentication
 - **Session Management** - Persistent login sessions
 - **Password Security** - bcryptjs hashing with salt rounds
+- **Login Throttling** - 10 attempts / 15 minutes per email
 
 ### 🎨 UI/UX
-- **Glassmorphism Design** - Modern, sleek dark theme
+- **Glassmorphism Design** - Dark and light themes with a working toggle (persisted per device)
 - **Responsive Layout** - Optimized for desktop, tablet, and mobile
-- **Real-time Updates** - Live price changes with color-coded indicators
+- **Real-time Updates** - Live price changes with color-coded indicators and an honest connection-status badge (Live / Polling / Offline)
 - **Loading States** - Skeleton screens and loading animations
-- **Error Handling** - Graceful error states and retry mechanisms
+- **Error Handling** - Real error states with retry everywhere, plus route/global error boundaries and a branded 404 page
+- **Accessibility** - Keyboard-operable tables, `aria-sort` headers, focusable rows, `Escape`-closable mobile menu
 
 ## 🛠️ Tech Stack
 
@@ -425,6 +429,11 @@ Built with **Next.js 15**, **TypeScript**, **Redux Toolkit**, **Prisma**, and **
   - Resend OTP functionality
   - Auto-delete unverified accounts after expiration
 - **Secure registration** - Password hashing with bcryptjs
+- **Password reset** - Forgot-password flow with emailed 6-digit code
+  - Uniform response for existing/unknown emails (no account enumeration)
+  - 60 s resend cooldown, 3 codes/hour per email, 10/hour per IP
+  - bcrypt-hashed code, 10-minute expiry, 5 failed attempts → 15-minute lock
+  - New password triggers a "password changed" security notification email
 - **Session management** - Persistent authentication
 - **Protected routes** - Middleware-based protection
 - **Profile dropdown** - Quick access to account features
@@ -441,6 +450,12 @@ FinScope includes a robust email verification system to ensure account security:
 5. **Account Activation** - Email verified, user can login
 6. **Auto-Cleanup** - Unverified accounts deleted after 10 minutes
 
+The same OTP machinery powers **password reset** (`/auth/forgot-password` →
+`/auth/reset-password`): request a code, enter it with a new password, and the
+account gets a "password changed" notification email. It is enumeration-safe
+(the API answers identically for known and unknown addresses) and lockout-protected
+exactly like login verification.
+
 ### Features
 - ✅ **6-Digit OTP** - Secure random code generation
 - ✅ **Premium 6-Box Input** - Beautiful individual input boxes with auto-focus
@@ -455,13 +470,14 @@ FinScope includes a robust email verification system to ensure account security:
 
 ### Technical Implementation
 - **Email Service**: Nodemailer with SMTP (Gmail, Outlook, etc.)
-- **OTP Storage**: Database field `emailVerificationToken`
+- **OTP Storage**: bcrypt-hashed code in `emailVerificationToken` (never plaintext)
 - **Expiry Tracking**: `tokenExpires` timestamp field
-- **Cleanup Method**: Vercel Cron Jobs + Client-side trigger
-- **Security**: bcrypt hashing, secure session management
+- **Attempt Protection**: 5 failed attempts lock the code for 15 minutes
+- **Cleanup Method**: Vercel Cron Jobs (`/api/cron/cleanup-unverified`, Bearer `CRON_SECRET` protected)
+- **Rate Limiting**: per-IP register, per-email verify/resend/login throttles
 
 ### Setup Requirements
-See `QUICK_SETUP.md` for detailed email configuration instructions.
+Set the SMTP variables shown in [Environment Variables](#environment-variables) (`SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `EMAIL_FROM`). Any standards-compliant SMTP provider works (Gmail app passwords, Resend, Postmark, SES…).
 
 ## 🗄️ Database Schema
 
@@ -491,6 +507,16 @@ npm start
 # Run ESLint
 npm run lint
 
+# Run unit tests (indicators, rate limiter)
+npm test
+
+# Run unit tests in watch mode
+npm run test:watch
+
+# Auth regression smoke tests (require dev server on :3000)
+node scripts/smoke-auth.mjs
+node scripts/smoke-reset.mjs
+
 # Generate Prisma Client after schema changes
 npx prisma generate
 
@@ -512,6 +538,10 @@ npx prisma studio
 | `npm run build` | Create optimized production build |
 | `npm start` | Start production server |
 | `npm run lint` | Run ESLint for code quality |
+| `npm test` | Run unit tests (Vitest) |
+| `npm run test:watch` | Run unit tests in watch mode |
+| `node scripts/smoke-auth.mjs` | Auth API regression smoke test (dev server required) |
+| `node scripts/smoke-reset.mjs` | Password-reset flow smoke test (dev server required) |
 | `npx prisma generate` | Generate Prisma Client |
 | `npx prisma db push` | Sync Prisma schema with database |
 | `npx prisma studio` | Open database GUI |
@@ -530,14 +560,31 @@ NEXTAUTH_SECRET="..."
 NEXTAUTH_URL="http://localhost:3000"
 
 # API Keys (Required)
+# Server-side only — never exposed to the browser bundle.
 FINNHUB_API_KEY="..."
-NEXT_PUBLIC_FINNHUB_API_KEY="..."
 
-# Cloudinary (Optional)
-NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME="..."
+# Cron protection (Required in production)
+# Verifies the cleanup endpoint's Authorization: Bearer header.
+CRON_SECRET="..."
+
+# Email / SMTP (Required for registration OTP + password-reset delivery)
+# `EMAIL_HOST` / `EMAIL_PORT` / `EMAIL_USER` / `EMAIL_PASSWORD` are accepted
+# as legacy aliases for the SMTP_* names below.
+SMTP_HOST="..."
+SMTP_PORT="587"
+SMTP_USER="..."
+SMTP_PASS="..."
+EMAIL_FROM="FinScope <no-reply@yourdomain.com>"
+
+# Cloudinary (Optional — profile avatar uploads)
+CLOUDINARY_CLOUD_NAME="..."
 CLOUDINARY_API_KEY="..."
 CLOUDINARY_API_SECRET="..."
 ```
+
+> **Note:** `NEXT_PUBLIC_FINNHUB_API_KEY` is no longer read anywhere in the
+> client bundle (all Finnhub access goes through server routes); it may remain
+> in older `.env` files but can be deleted.
 
 ## 🚢 Deployment
 
@@ -675,19 +722,22 @@ images: {
 
 ## 📈 Performance Optimization
 
-- **WebSocket Management** - Automatic reconnection and cleanup
+- **WebSocket Management** - Singleton streams with automatic reconnection, REST-polling fallback, and status reporting
+- **Server-side API Caching** - TTL cache + request coalescing for CoinGecko/quote endpoints (N clients polling ≠ N upstream calls)
 - **Redux State** - Optimized state updates with Redux Toolkit
 - **Code Splitting** - Dynamic imports for better performance
-- **Image Optimization** - Next.js Image component with lazy loading
-- **API Caching** - React Query for intelligent data caching
 - **Database Indexes** - Optimized Prisma schema for fast queries
 
 ## 🔒 Security Features
 
 - **Password Hashing** - bcryptjs with salt rounds
-- **Protected Routes** - Middleware-based authentication
+- **Protected Routes** - Middleware-based authentication for pages; API routes enforce their own session checks
 - **Session Management** - Secure JWT tokens
-- **Input Validation** - Server-side validation for all forms
+- **Email OTP Hardening** - `crypto.randomInt` generation, bcrypt-hashed storage, constant-time verification, 5-attempt lockout, resend/login rate limits
+- **Enumeration-Safe Auth** - Uniform register/resend responses and a stateless verification countdown (no info leak about account existence)
+- **Server-Verified Trades** - Buy/sell prices re-verified server-side (±3% band) with atomic balance/holding updates
+- **Secret Hygiene** - All provider keys are server-side only; no `NEXT_PUBLIC_*` secrets in the client bundle
+- **Input Validation** - Server-side validation for all forms and API payloads
 - **SQL Injection Prevention** - Prisma parameterized queries
 - **XSS Protection** - React's built-in escaping
 - **CSRF Protection** - NextAuth.js CSRF tokens
@@ -798,14 +848,14 @@ If you find this project helpful, please consider:
 
 ## 📚 Documentation
 
-Comprehensive guides are available in the repository:
+- **[docs/AUDIT-REPORT.md](docs/AUDIT-REPORT.md)** — full professional audit: architecture, every finding (C/H/M/L/S IDs), data-provider verification, implemented-fix log with verification evidence, and the roadmap.
+- **This README** — setup, configuration, deployment, and usage guides.
 
-- **[QUICK_SETUP.md](QUICK_SETUP.md)** - Quick start guide with step-by-step setup
-- **[EMAIL_VERIFICATION_SETUP.md](EMAIL_VERIFICATION_SETUP.md)** - Detailed email verification configuration
-- **[VERCEL_HOBBY_FIX.md](VERCEL_HOBBY_FIX.md)** - Vercel free plan compatibility guide
-- **[IMPLEMENTATION_SUMMARY.md](IMPLEMENTATION_SUMMARY.md)** - Technical implementation details
-- **[BUILD_FIX.md](BUILD_FIX.md)** - Build error troubleshooting
-- **[OTP_UNIFICATION.md](OTP_UNIFICATION.md)** - OTP verification component architecture
+> The previous `QUICK_SETUP.md`, `EMAIL_VERIFICATION_SETUP.md`,
+> `VERCEL_HOBBY_FIX.md`, `IMPLEMENTATION_SUMMARY.md`, `BUILD_FIX.md`, and
+> `OTP_UNIFICATION.md` links were removed — those files were deleted from the
+> repository (commit `a840d8b`) and this README was stale. Email setup
+> instructions now live in the Environment Variables section above.
 
 
 ---

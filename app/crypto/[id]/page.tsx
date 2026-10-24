@@ -1,27 +1,94 @@
 "use client";
 
-import { useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Header from '@/components/Header';
-import { useAppSelector } from '@/store/hooks';
+import { useAppDispatch, useAppSelector } from '@/store/hooks';
+import { updateCryptoPrices } from '@/store/slices/marketSlice';
+import { useMarketStream } from '@/hooks/useMarketStream';
 import { formatCurrency, formatPercentage, getPriceChangeColor, formatLargeNumber } from '@/lib/utils';
 import WatchlistButton from '@/components/watchlist/WatchlistButton';
 import CryptoChart from '@/components/crypto/CryptoChart';
 import LoadingScreen from '@/components/LoadingScreen';
 import TradingPanel from '@/components/trading/TradingPanel';
 import CryptoIcon from '@/components/crypto/CryptoIcon';
+import TechnicalInsights from '@/components/markets/TechnicalInsights';
 import { Card, CardContent, CardHeader, CardTitle, Badge, Button } from '@/components/ui';
 
 export default function CryptoDetailPage() {
   const params = useParams();
   const router = useRouter();
+  const dispatch = useAppDispatch();
   const cryptoId = params.id as string;
   const symbol = cryptoId.toUpperCase();
 
   const { cryptoPrices } = useAppSelector((state) => state.market);
   const priceData = cryptoPrices[symbol];
 
+  // H7: this page previously rendered an infinite <LoadingScreen /> on direct
+  // navigation because only the dashboard ever connected the stream. The page
+  // now owns its data: live stream + a one-shot REST snapshot on mount.
+  useMarketStream({ stocks: false });
+
+  const [loadState, setLoadState] = useState<'loading' | 'ready' | 'error'>('loading');
+  const [errorMessage, setErrorMessage] = useState('');
+
+  const loadSnapshot = useCallback(async () => {
+    setLoadState('loading');
+    setErrorMessage('');
+    try {
+      const response = await fetch(`/api/crypto-prices?symbols=${encodeURIComponent(symbol)}`);
+      if (response.status === 400) {
+        // The API answers 400 when the symbol isn't a supported coin.
+        setErrorMessage(`"${symbol}" is not a supported cryptocurrency on FinScope.`);
+        setLoadState('error');
+        return;
+      }
+      if (!response.ok) {
+        setErrorMessage('Could not load price data. Please retry.');
+        setLoadState('error');
+        return;
+      }
+      const data = await response.json();
+      if (data.prices?.[symbol]) {
+        dispatch(updateCryptoPrices(data.prices));
+        setLoadState('ready');
+      } else {
+        // Mapped but currently unavailable upstream — say so instead of
+        // hanging on the loader.
+        setErrorMessage(`No price data available for "${symbol}" right now. Please retry.`);
+        setLoadState('error');
+      }
+    } catch (error) {
+      console.error('[CryptoDetail] snapshot failed:', error);
+      setErrorMessage('Network error — could not load price data.');
+      setLoadState('error');
+    }
+  }, [symbol, dispatch]);
+
+  useEffect(() => {
+    loadSnapshot();
+  }, [loadSnapshot]);
+
   if (!priceData) {
+    if (loadState === 'error') {
+      return (
+        <main className="min-h-screen bg-background">
+          <Header activePage="markets" />
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 text-center">
+            <p className="text-sm text-error mb-4">{errorMessage}</p>
+            <div className="flex items-center justify-center gap-3">
+              <Button variant="primary" size="sm" onClick={loadSnapshot}>
+                Retry
+              </Button>
+              <Button variant="secondary" size="sm" onClick={() => router.push('/dashboard')}>
+                Back to Markets
+              </Button>
+            </div>
+          </div>
+        </main>
+      );
+    }
     return <LoadingScreen />;
   }
 
@@ -110,44 +177,51 @@ export default function CryptoDetailPage() {
           </div>
         </div>
 
-        {/* Additional Info */}
-        <Card className="animate-slide-up animate-delay-200">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base font-semibold">Market Information</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid md:grid-cols-2 gap-x-8 gap-y-4">
-              <div className="flex justify-between items-center py-3 border-b border-border/60">
-                <span className="text-sm text-muted-foreground">Current Price</span>
-                <span className="text-sm font-mono font-medium text-foreground">{formatCurrency(priceData.price)}</span>
+        {/* Technical Insights (Phase C — real candles + tested indicators) */}
+        <div className="grid lg:grid-cols-3 gap-4 mb-6 animate-slide-up animate-delay-200">
+          <div className="lg:col-span-1">
+            <TechnicalInsights symbol={symbol} />
+          </div>
+
+          {/* Market Information */}
+          <Card className="lg:col-span-2">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base font-semibold">Market Information</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid md:grid-cols-2 gap-x-8 gap-y-4">
+                <div className="flex justify-between items-center py-3 border-b border-border/60">
+                  <span className="text-sm text-muted-foreground">Current Price</span>
+                  <span className="text-sm font-mono font-medium text-foreground">{formatCurrency(priceData.price)}</span>
+                </div>
+                <div className="flex justify-between items-center py-3 border-b border-border/60">
+                  <span className="text-sm text-muted-foreground">24h Change</span>
+                  <span className={`text-sm font-mono font-medium ${getPriceChangeColor(priceData.priceChange24h)}`}>
+                    {formatCurrency(priceData.priceChange24h)}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center py-3 border-b border-border/60">
+                  <span className="text-sm text-muted-foreground">24h Change %</span>
+                  <span className={`text-sm font-mono font-medium ${getPriceChangeColor(priceData.priceChangePercent24h)}`}>
+                    {formatPercentage(priceData.priceChangePercent24h)}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center py-3 border-b border-border/60">
+                  <span className="text-sm text-muted-foreground">24h Volume</span>
+                  <span className="text-sm font-mono font-medium text-foreground">{formatLargeNumber(priceData.volume24h)}</span>
+                </div>
+                <div className="flex justify-between items-center py-3 border-b border-border/60">
+                  <span className="text-sm text-muted-foreground">24h High</span>
+                  <span className="text-sm font-mono font-medium text-success">{formatCurrency(priceData.high24h)}</span>
+                </div>
+                <div className="flex justify-between items-center py-3 border-b border-border/60">
+                  <span className="text-sm text-muted-foreground">24h Low</span>
+                  <span className="text-sm font-mono font-medium text-error">{formatCurrency(priceData.low24h)}</span>
+                </div>
               </div>
-              <div className="flex justify-between items-center py-3 border-b border-border/60">
-                <span className="text-sm text-muted-foreground">24h Change</span>
-                <span className={`text-sm font-mono font-medium ${getPriceChangeColor(priceData.priceChange24h)}`}>
-                  {formatCurrency(priceData.priceChange24h)}
-                </span>
-              </div>
-              <div className="flex justify-between items-center py-3 border-b border-border/60">
-                <span className="text-sm text-muted-foreground">24h Change %</span>
-                <span className={`text-sm font-mono font-medium ${getPriceChangeColor(priceData.priceChangePercent24h)}`}>
-                  {formatPercentage(priceData.priceChangePercent24h)}
-                </span>
-              </div>
-              <div className="flex justify-between items-center py-3 border-b border-border/60">
-                <span className="text-sm text-muted-foreground">24h Volume</span>
-                <span className="text-sm font-mono font-medium text-foreground">{formatLargeNumber(priceData.volume24h)}</span>
-              </div>
-              <div className="flex justify-between items-center py-3 border-b border-border/60">
-                <span className="text-sm text-muted-foreground">24h High</span>
-                <span className="text-sm font-mono font-medium text-success">{formatCurrency(priceData.high24h)}</span>
-              </div>
-              <div className="flex justify-between items-center py-3 border-b border-border/60">
-                <span className="text-sm text-muted-foreground">24h Low</span>
-                <span className="text-sm font-mono font-medium text-error">{formatCurrency(priceData.low24h)}</span>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </main>
   );

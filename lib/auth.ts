@@ -4,6 +4,13 @@ import GoogleProvider from 'next-auth/providers/google';
 import { PrismaAdapter } from '@next-auth/prisma-adapter';
 import { prisma } from './prisma';
 import bcrypt from 'bcryptjs';
+import { rateLimit } from './rate-limit';
+
+/** Sliding-window throttle on credential logins (docs/AUDIT-REPORT.md H2).
+ *  Keyed by email: NextAuth's `authorize()` doesn't expose the request IP, so
+ *  this stops password-stuffing against one account; IP-level throttling for
+ *  the auth endpoints lives in the route handlers. */
+const LOGIN_RATE_LIMIT = { max: 10, windowMs: 15 * 60_000 };
 
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma),
@@ -28,6 +35,19 @@ export const authOptions: NextAuthOptions = {
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) {
           throw new Error('Invalid credentials');
+        }
+
+        // Throttle BEFORE any DB work (H2). Keyed by lowercased email so
+        // case variants don't get separate budgets.
+        const throttle = rateLimit(
+          `login:${credentials.email.trim().toLowerCase()}`,
+          LOGIN_RATE_LIMIT.max,
+          LOGIN_RATE_LIMIT.windowMs
+        );
+        if (!throttle.allowed) {
+          throw new Error(
+            `Too many login attempts. Please try again in ${throttle.retryAfterSec} seconds.`
+          );
         }
 
         const user = await prisma.user.findUnique({

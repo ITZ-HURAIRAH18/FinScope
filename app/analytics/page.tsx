@@ -1,48 +1,20 @@
 "use client";
 
-import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Header from '@/components/Header';
-import { useAppDispatch, useAppSelector } from '@/store/hooks';
-import { binanceWS } from '@/lib/binance-websocket';
-import { getFinnhubWS } from '@/lib/finnhub-websocket';
+import { useAppSelector } from '@/store/hooks';
+import { useMarketStream } from '@/hooks/useMarketStream';
 import { formatCurrency, formatPercentage, getPriceChangeColor } from '@/lib/utils';
-import { updateCryptoPrices, updateStockPrices } from '@/store/slices/marketSlice';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui';
+import FearGreedCard from '@/components/markets/FearGreedCard';
 
 export default function AnalyticsPage() {
   const router = useRouter();
-  const dispatch = useAppDispatch();
   const { cryptoPrices, stockPrices } = useAppSelector((state) => state.market);
 
-  useEffect(() => {
-    // Initialize WebSocket connections
-    binanceWS.connect();
-    const unsubBinance = binanceWS.subscribe((prices) => {
-      dispatch(updateCryptoPrices(prices));
-    });
-
-    // Initialize Finnhub WebSocket with async token fetch
-    const initFinnhub = async () => {
-      const finnhubAPIKey = process.env.NEXT_PUBLIC_FINNHUB_API_KEY || '';
-      const finnhubWS = await getFinnhubWS(finnhubAPIKey);
-      finnhubWS.connect();
-      const unsubFinnhub = finnhubWS.subscribe((prices) => {
-        dispatch(updateStockPrices(prices));
-      });
-      
-      // Store cleanup function
-      (window as any).__analyticsFinnhubCleanup = unsubFinnhub;
-    };
-    
-    initFinnhub();
-
-    return () => {
-      unsubBinance();
-      const cleanup = (window as any).__analyticsFinnhubCleanup;
-      if (cleanup) cleanup();
-    };
-  }, [dispatch]);
+  // Shared singleton streams (hooks/useMarketStream.ts) — no per-page
+  // window.__*Cleanup globals (audit S4).
+  useMarketStream();
 
   // Get top gainers and losers
   const cryptoArray = Object.values(cryptoPrices) as any[];
@@ -81,26 +53,33 @@ export default function AnalyticsPage() {
           </div>
         </div>
 
-        {/* Market Overview */}
-        <Card className="mb-6 animate-slide-up">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base font-semibold">Market Overview</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="stat-block">
-                <div className="section-label mb-1.5">Cryptocurrencies</div>
-                <div className="value-large text-2xl">{cryptoArray.length}</div>
-                <div className="text-xs text-muted-foreground mt-1">Assets tracked</div>
+        {/* Market Overview + Fear & Greed */}
+        <div className="grid lg:grid-cols-3 gap-4 mb-6">
+          <Card className="lg:col-span-2 animate-slide-up">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base font-semibold">Market Overview</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="stat-block">
+                  <div className="section-label mb-1.5">Cryptocurrencies</div>
+                  <div className="value-large text-2xl">{cryptoArray.length}</div>
+                  <div className="text-xs text-muted-foreground mt-1">Assets tracked</div>
+                </div>
+                <div className="stat-block">
+                  <div className="section-label mb-1.5">Stocks</div>
+                  <div className="value-large text-2xl">{stockArray.length}</div>
+                  <div className="text-xs text-muted-foreground mt-1">Assets tracked</div>
+                </div>
               </div>
-              <div className="stat-block">
-                <div className="section-label mb-1.5">Stocks</div>
-                <div className="value-large text-2xl">{stockArray.length}</div>
-                <div className="text-xs text-muted-foreground mt-1">Assets tracked</div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+
+          {/* Phase C: real provider sentiment index (alternative.me) */}
+          <div className="animate-slide-up animate-delay-100">
+            <FearGreedCard />
+          </div>
+        </div>
 
         {/* Cryptocurrency Top Movers */}
         <div className="mb-6 animate-slide-up animate-delay-100">

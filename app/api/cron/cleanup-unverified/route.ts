@@ -1,11 +1,27 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
+/**
+ * Deletes unverified accounts whose OTP token has expired.
+ *
+ * SECURITY (audit finding C2): both methods require the CRON_SECRET bearer
+ * token. An earlier revision exposed an unauthenticated POST that allowed
+ * anyone to trigger deletions and returned deleted users' email addresses.
+ * Client-side triggering was removed entirely — the Vercel cron defined in
+ * vercel.json is the only caller (Vercel injects `Authorization: Bearer
+ * $CRON_SECRET` automatically).
+ */
+
+function isAuthorized(request: NextRequest): boolean {
+  const authHeader = request.headers.get('authorization');
+  const secret = process.env.CRON_SECRET;
+  if (!secret) return false;
+  return authHeader === `Bearer ${secret}`;
+}
+
 export async function GET(request: NextRequest) {
   try {
-    // Verify this is a legitimate cron request
-    const authHeader = request.headers.get('authorization');
-    if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+    if (!isAuthorized(request)) {
       return NextResponse.json(
         { error: 'Unauthorized - cron secret required' },
         { status: 401 }
@@ -22,33 +38,10 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// Allow POST for client-side triggering (no auth required)
-export async function POST(request: NextRequest) {
-  try {
-    return await performCleanup();
-  } catch (error) {
-    console.error('Error in cleanup job:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
-  }
-}
-
 async function performCleanup() {
   const now = new Date();
 
-  // Find all unverified users whose token has expired
-  const expiredUsers = await prisma.user.findMany({
-    where: {
-      emailVerified: null,
-      tokenExpires: {
-        lt: now,
-      },
-    },
-  });
-
-  // Delete expired unverified users
+  // Delete expired unverified users (count only — no PII in the response)
   const deleteResult = await prisma.user.deleteMany({
     where: {
       emailVerified: null,
@@ -58,12 +51,11 @@ async function performCleanup() {
     },
   });
 
-  console.log(`Deleted ${deleteResult.count} unverified users with expired tokens`);
+  console.log(`[cron] Deleted ${deleteResult.count} unverified users with expired tokens`);
 
   return NextResponse.json({
     success: true,
     deletedCount: deleteResult.count,
-    deletedUsers: expiredUsers.map(u => ({ id: u.id, email: u.email })),
     timestamp: now.toISOString(),
   });
 }

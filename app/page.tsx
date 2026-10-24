@@ -3,10 +3,8 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import Header from "@/components/Header";
-import { useAppDispatch, useAppSelector } from "@/store/hooks";
-import { updateCryptoPrices, updateStockPrices } from "@/store/slices/marketSlice";
-import { binanceWS } from "@/lib/binance-websocket";
-import { getFinnhubWS } from "@/lib/finnhub-websocket";
+import { useAppSelector } from "@/store/hooks";
+import { useMarketStream } from "@/hooks/useMarketStream";
 import { formatCurrency, formatPercentage, getPriceChangeColor } from "@/lib/utils";
 import { Card, CardContent } from "@/components/ui";
 import { FadeIn, StaggerContainer, ScaleIn } from "@/components/motion";
@@ -22,7 +20,7 @@ import {
   Clock,
 } from "lucide-react";
 
-// Mini sparkline component
+// Mini sparkline component (renders REAL history from /api/market/overview)
 function Sparkline({ data, isPositive }: { data: number[]; isPositive: boolean }) {
   if (!data.length) return null;
 
@@ -56,43 +54,48 @@ function Sparkline({ data, isPositive }: { data: number[]; isPositive: boolean }
   );
 }
 
+interface OverviewEntry {
+  price: number;
+  changePercent24h?: number;
+  changePercent?: number;
+  sparkline: number[];
+}
+
+interface OverviewResponse {
+  crypto: Record<string, OverviewEntry>;
+  stocks: Record<string, OverviewEntry>;
+  meta?: { stale?: boolean; unavailable?: string[] };
+}
+
 export default function HomePage() {
-  const dispatch = useAppDispatch();
   const { cryptoPrices, stockPrices } = useAppSelector((state) => state.market);
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
+  const [overview, setOverview] = useState<OverviewResponse | null>(null);
 
+  // Streams are shared singletons (see hooks/useMarketStream.ts) — no more
+  // per-page window.__*Cleanup races (audit S4).
+  useMarketStream({ onUpdate: () => setLastUpdate(new Date()) });
+
+  // Real sparkline history for the market cards (replaces fabricated data — audit S6).
   useEffect(() => {
-    console.log("Homepage: Initializing WebSocket connections...");
-
-    binanceWS.connect();
-    const unsubBinance = binanceWS.subscribe((prices) => {
-      dispatch(updateCryptoPrices(prices));
-      setLastUpdate(new Date());
-    });
-
-    // Initialize Finnhub WebSocket with async token fetch
-    const initFinnhub = async () => {
-      const finnhubAPIKey = process.env.NEXT_PUBLIC_FINNHUB_API_KEY || "";
-      const finnhubWS = await getFinnhubWS(finnhubAPIKey);
-      finnhubWS.connect();
-      const unsubFinnhub = finnhubWS.subscribe((prices) => {
-        dispatch(updateStockPrices(prices));
-        setLastUpdate(new Date());
-      });
-
-      // Store cleanup function
-      (window as any).__finnhubCleanup = unsubFinnhub;
+    let cancelled = false;
+    const load = async () => {
+      try {
+        const res = await fetch('/api/market/overview');
+        if (!res.ok) return; // cards still render live prices without sparklines
+        const data: OverviewResponse = await res.json();
+        if (!cancelled) setOverview(data);
+      } catch {
+        // network error — non-fatal, sparklines are decorative
+      }
     };
-
-    initFinnhub();
-
+    load();
+    const id = setInterval(load, 5 * 60_000); // refresh alongside the 60s CDN TTL
     return () => {
-      unsubBinance();
-      const cleanup = (window as any).__finnhubCleanup;
-      if (cleanup) cleanup();
-      binanceWS.disconnect();
+      cancelled = true;
+      clearInterval(id);
     };
-  }, [dispatch]);
+  }, []);
 
   const cryptoSymbols = [
     { name: 'Bitcoin', symbol: 'BTC' },
@@ -102,16 +105,6 @@ export default function HomePage() {
   ];
 
   const stockSymbols = ['AAPL', 'GOOGL', 'TSLA', 'OANDA:XAU_USD'];
-
-  // Generate pseudo sparkline data from price changes
-  const generateSparkline = (priceChangePercent: number): number[] => {
-    const base = 100;
-    const trend = priceChangePercent / 100;
-    return Array.from({ length: 12 }, (_, i) => {
-      const noise = (Math.sin(i * 1.5) * 2) + (Math.cos(i * 0.8) * 1.5);
-      return base + (trend * i * 5) + noise;
-    });
-  };
 
   const formatTime = (date: Date) => {
     return date.toLocaleTimeString('en-US', {
@@ -286,7 +279,7 @@ export default function HomePage() {
                   {cryptoSymbols.map(({ name, symbol }) => {
                     const priceData = cryptoPrices[symbol];
                     const isPositive = priceData ? priceData.priceChangePercent24h >= 0 : true;
-                    const sparklineData = priceData ? generateSparkline(priceData.priceChangePercent24h) : [];
+                    const sparklineData = overview?.crypto[symbol]?.sparkline ?? [];
 
                     return (
                       <div
@@ -358,8 +351,11 @@ export default function HomePage() {
                 <div className="space-y-1 mb-5">
                   {stockSymbols.map((symbol) => {
                     const priceData = stockPrices[symbol];
-                    const isPositive = priceData ? priceData.priceChangePercent >= 0 : true;
-                    const sparklineData = priceData ? generateSparkline(priceData.priceChangePercent) : [];
+                    const entry = overview?.stocks[symbol];
+                    // Sparkline color follows the SAME window as the real
+                    // sparkline data (5-day move), not the live 24h stream value.
+                    const isPositive = entry ? entry.changePercent! >= 0 : true;
+                    const sparklineData = entry?.sparkline ?? [];
                     const displayName = symbol === 'OANDA:XAU_USD' ? 'Gold' : symbol;
                     const displayType = symbol === 'OANDA:XAU_USD' ? 'Spot' : 'Stock';
 

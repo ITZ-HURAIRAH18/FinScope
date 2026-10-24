@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense } from 'react';
+import { Suspense, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import OTPVerification from '@/components/OTPVerification';
 
@@ -9,11 +9,17 @@ function VerifyOTPForm() {
   const searchParams = useSearchParams();
   const email = searchParams.get('email');
 
-  if (!email) {
-    router.push('/auth/login');
-    return null;
-  }
+  useEffect(() => {
+    // Redirect in an effect, not during render (React side-effect-in-render,
+    // audit L-finding).
+    if (!email) router.replace('/auth/login');
+  }, [email, router]);
 
+  if (!email) return null;
+
+  // Login flow: no expiry anchor exists yet (the user was bounced here from
+  // the login form), so the component starts a fresh local window. The server
+  // still enforces the real `tokenExpires` when the code is submitted.
   return <OTPVerification email={email} mode="login" />;
 }
 

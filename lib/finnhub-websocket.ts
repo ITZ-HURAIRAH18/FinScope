@@ -1,6 +1,10 @@
 /**
  * Finnhub WebSocket Client for Real-time Stock Prices
- * Requires API key
+ *
+ * The API key is fetched from the authenticated server proxy
+ * (/api/finnhub/ws-token) — it is intentionally NOT read from
+ * NEXT_PUBLIC_* environment variables and there is no client-side
+ * key fallback (see docs/AUDIT-REPORT.md finding H1).
  */
 
 export interface StockPrice {
@@ -12,15 +16,20 @@ export interface StockPrice {
   lastUpdate: number;
 }
 
+export type FinnhubConnectionStatus = 'idle' | 'connecting' | 'connected' | 'disconnected' | 'unauthorized';
+
 type StockPriceUpdateCallback = (data: Record<string, StockPrice>) => void;
+type StatusCallback = (status: FinnhubConnectionStatus) => void;
 
 class FinnhubWebSocketClient {
   private ws: WebSocket | null = null;
   private callbacks: Set<StockPriceUpdateCallback> = new Set();
+  private statusCallbacks: Set<StatusCallback> = new Set();
   private prices: Record<string, StockPrice> = {};
   private reconnectTimer: NodeJS.Timeout | null = null;
-  private apiKey: string;
   private wsToken: string | null = null;
+  private status: FinnhubConnectionStatus = 'idle';
+  private connecting = false;
   private symbols: string[] = [
     'AAPL',
     'GOOGL',
@@ -36,49 +45,67 @@ class FinnhubWebSocketClient {
     'SLV', // Silver
   ];
 
-  constructor(apiKey: string) {
-    this.apiKey = apiKey;
+  private setStatus(status: FinnhubConnectionStatus) {
+    if (this.status === status) return;
+    this.status = status;
+    this.statusCallbacks.forEach((cb) => {
+      try {
+        cb(status);
+      } catch (error) {
+        console.error('[Finnhub WS] Status callback error:', error);
+      }
+    });
+  }
+
+  getStatus(): FinnhubConnectionStatus {
+    return this.status;
+  }
+
+  subscribeStatus(callback: StatusCallback): () => void {
+    this.statusCallbacks.add(callback);
+    callback(this.status);
+    return () => {
+      this.statusCallbacks.delete(callback);
+    };
   }
 
   private async getWebSocketToken(): Promise<string> {
     if (this.wsToken) {
       return this.wsToken;
     }
-    
-    try {
-      const response = await fetch('/api/finnhub/ws-token');
-      const data = await response.json();
-      if (data.token) {
-        this.wsToken = data.token;
-        return data.token;
-      }
-      throw new Error('No token returned from server');
-    } catch (error) {
-      console.error('[Finnhub WS] Failed to fetch WebSocket token:', error);
-      // Fallback to constructor API key
-      return this.apiKey;
+
+    const response = await fetch('/api/finnhub/ws-token');
+    if (!response.ok) {
+      // 401 = user not signed in; other statuses = server-side misconfiguration.
+      throw new Error(`Token request failed with status ${response.status}`);
     }
+    const data = await response.json();
+    if (data.token) {
+      this.wsToken = data.token;
+      return data.token;
+    }
+    throw new Error('No token returned from server');
   }
 
   connect() {
-    if (this.ws?.readyState === WebSocket.OPEN) {
-      console.log('[Finnhub WS] Already connected');
+    if (this.ws?.readyState === WebSocket.OPEN || this.connecting) {
       return;
     }
+    this.connecting = true;
+    this.setStatus('connecting');
 
-    try {
-      // Connect WebSocket using token from server
-      this.getWebSocketToken().then(token => {
+    this.getWebSocketToken()
+      .then((token) => {
+        this.connecting = false;
         const url = `wss://ws.finnhub.io?token=${token}`;
-        console.log('[Finnhub WS] Connecting...');
 
         this.ws = new WebSocket(url);
 
         this.ws.onopen = () => {
-          console.log('[Finnhub WS] Connected successfully');
-          this.reconnectAttempts = 0; // Reset on successful connection
-          // Subscribe to symbols
-          this.symbols.forEach(symbol => {
+          // Reset backoff only on a genuinely successful connection.
+          this.reconnectAttempts = 0;
+          this.setStatus('connected');
+          this.symbols.forEach((symbol) => {
             this.subscribeSymbol(symbol);
           });
           // Fetch initial data via REST to populate immediately
@@ -98,35 +125,42 @@ class FinnhubWebSocketClient {
           }
         };
 
-        this.ws.onerror = (event) => {
-          // WebSocket error events don't contain detailed error info
+        this.ws.onerror = () => {
+          // WebSocket error events don't contain detailed error info;
+          // the close handler drives reconnection.
           console.warn('[Finnhub WS] Connection error occurred');
         };
 
         this.ws.onclose = (event) => {
-          console.log(`[Finnhub WS] Connection closed (code: ${event.code}, reason: ${event.reason || 'No reason provided'})`);
-          this.scheduleReconnect();
+          const unauthorized = event.code === 401 || event.code === 4401;
+          if (unauthorized) {
+            // Token expired/invalid — force a fresh token on the next attempt.
+            this.wsToken = null;
+          }
+          this.scheduleReconnect(unauthorized);
         };
+      })
+      .catch((error) => {
+        this.connecting = false;
+        const unauthorized = /status 401/.test(String(error?.message));
+        console.error('[Finnhub WS] Failed to obtain token:', error);
+        this.setStatus(unauthorized ? 'unauthorized' : 'disconnected');
+        this.scheduleReconnect(unauthorized);
       });
-    } catch (error) {
-      console.error('[Finnhub WS] Connection error:', error);
-      this.scheduleReconnect();
-    }
   }
 
   async fetchInitialData() {
-    console.log('[Finnhub] Fetching initial data...');
     const promises = this.symbols.map(async (symbol) => {
       try {
         // Use proxied API route to hide API key
         const response = await fetch(`/api/finnhub/quote?symbol=${encodeURIComponent(symbol)}`);
-        
+
         if (!response.ok) {
           const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
           console.error(`[Finnhub] API error for ${symbol}:`, errorData);
           return;
         }
-        
+
         const data = await response.json();
         // Finnhub quote: c=current, d=change, dp=percent, h=high, l=low, o=open, pc=prev close
         if (data.c) {
@@ -151,7 +185,6 @@ class FinnhubWebSocketClient {
   private subscribeSymbol(symbol: string) {
     if (this.ws?.readyState === WebSocket.OPEN) {
       this.ws.send(JSON.stringify({ type: 'subscribe', symbol }));
-      console.log(`[Finnhub WS] Subscribed to ${symbol}`);
     }
   }
 
@@ -178,11 +211,9 @@ class FinnhubWebSocketClient {
       volume: existingPrice ? existingPrice.volume + volume : volume,
       lastUpdate: Date.now(),
     };
-    // Trigger debounced notification
-    this.notifyCallbacks();
 
-    // Notify all subscribers
-    this.notifyCallbacks();
+    // Debounced notification (single call — previously invoked twice per trade)
+    this.scheduleNotify();
   }
 
   private debounceTimer: NodeJS.Timeout | null = null;
@@ -210,32 +241,34 @@ class FinnhubWebSocketClient {
     });
   }
 
-  private notifyCallbacks() {
-    this.scheduleNotify();
-  }
-
   private reconnectAttempts = 0;
   private maxReconnectAttempts = 10;
   private reconnectBaseDelay = 1000; // 1 second
 
-  private scheduleReconnect() {
+  private scheduleReconnect(tokenExpired = false) {
     if (this.reconnectTimer) {
       clearTimeout(this.reconnectTimer);
+      this.reconnectTimer = null;
     }
-    
-    if (this.reconnectAttempts >= this.maxReconnectAttempts) {
+
+    if (this.status === 'unauthorized' && !tokenExpired) {
+      return; // no point retrying without credentials
+    }
+
+    this.reconnectAttempts++;
+    if (this.reconnectAttempts > this.maxReconnectAttempts) {
       console.error(`[Finnhub WS] Max reconnection attempts (${this.maxReconnectAttempts}) reached. Giving up.`);
+      this.setStatus('disconnected');
       return;
     }
-    
-    this.reconnectAttempts++;
+
     // Exponential backoff: 1s, 2s, 4s, 8s, 16s, max 30s
+    // (previously the attempt counter was reset inside this callback,
+    //  which made the backoff never exceed 1s — see audit finding)
     const delay = Math.min(this.reconnectBaseDelay * Math.pow(2, this.reconnectAttempts - 1), 30000);
-    
-    console.log(`[Finnhub WS] Attempting to reconnect... (attempt ${this.reconnectAttempts}/${this.maxReconnectAttempts}, delay: ${delay}ms)`);
-    
+
+    this.setStatus('connecting');
     this.reconnectTimer = setTimeout(() => {
-      this.reconnectAttempts = 0; // Reset on reconnect attempt
       this.connect();
     }, delay);
   }
@@ -251,13 +284,15 @@ class FinnhubWebSocketClient {
     };
   }
 
+  /** Full teardown: closes the socket and drops every subscriber. */
   disconnect() {
     if (this.reconnectTimer) {
       clearTimeout(this.reconnectTimer);
+      this.reconnectTimer = null;
     }
-    this.reconnectAttempts = 0; // Reset attempts on manual disconnect
+    this.reconnectAttempts = 0;
+    this.connecting = false;
     if (this.ws) {
-      // Unsubscribe from all symbols
       this.symbols.forEach(symbol => {
         if (this.ws?.readyState === WebSocket.OPEN) {
           this.ws.send(JSON.stringify({ type: 'unsubscribe', symbol }));
@@ -267,6 +302,7 @@ class FinnhubWebSocketClient {
       this.ws = null;
     }
     this.callbacks.clear();
+    this.setStatus('idle');
   }
 
   getCurrentPrices(): Record<string, StockPrice> {
@@ -278,25 +314,12 @@ class FinnhubWebSocketClient {
   }
 }
 
-// Create singleton instance (will be initialized with API key from env)
+// Singleton instance — the token is fetched from the server proxy on connect().
 let finnhubWSInstance: FinnhubWebSocketClient | null = null;
 
-export async function getFinnhubWS(apiKey?: string): Promise<FinnhubWebSocketClient> {
+export async function getFinnhubWS(): Promise<FinnhubWebSocketClient> {
   if (!finnhubWSInstance) {
-    let key = apiKey || process.env.NEXT_PUBLIC_FINNHUB_API_KEY || '';
-    
-    // Try to get token from server-side API route
-    try {
-      const response = await fetch('/api/finnhub/ws-token');
-      const data = await response.json();
-      if (data.token) {
-        key = data.token;
-      }
-    } catch (error) {
-      console.warn('[Finnhub WS] Using fallback API key:', error);
-    }
-    
-    finnhubWSInstance = new FinnhubWebSocketClient(key);
+    finnhubWSInstance = new FinnhubWebSocketClient();
   }
   return finnhubWSInstance;
 }

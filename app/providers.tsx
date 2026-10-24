@@ -5,6 +5,7 @@ import { SessionProvider } from "next-auth/react";
 import { Provider } from "react-redux";
 import { store } from "@/store/store";
 import { useState } from "react";
+import ThemeSync from "@/components/ThemeSync";
 
 export function Providers({ children }: { children: React.ReactNode }) {
   const [queryClient] = useState(
@@ -26,6 +27,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
         refetchOnWindowFocus={true}
       >
         <QueryClientProvider client={queryClient}>
+          <ThemeSync />
           {children}
         </QueryClientProvider>
       </SessionProvider>

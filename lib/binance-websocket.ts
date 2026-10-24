@@ -16,9 +16,24 @@ export interface CryptoPrice {
 
 type PriceUpdateCallback = (data: Record<string, CryptoPrice>) => void;
 
+/**
+ * Connection status mirror for the UI's "Live" indicator (audit M6/Header):
+ * the indicator used to be hard-coded green even with no stream connected.
+ */
+export type BinanceConnectionStatus =
+  | 'idle'
+  | 'connecting'
+  | 'connected'
+  | 'polling'
+  | 'disconnected';
+
+type StatusCallback = (status: BinanceConnectionStatus) => void;
+
 class BinanceWebSocketClient {
   private ws: WebSocket | null = null;
   private callbacks: Set<PriceUpdateCallback> = new Set();
+  private statusCallbacks: Set<StatusCallback> = new Set();
+  private status: BinanceConnectionStatus = 'idle';
   private prices: Record<string, CryptoPrice> = {};
   private reconnectTimer: NodeJS.Timeout | null = null;
   private pollingTimer: NodeJS.Timeout | null = null;
@@ -52,6 +67,7 @@ class BinanceWebSocketClient {
     }
 
     this.reconnectAttempts = 0; // Reset attempts when starting a new connection
+    this.setStatus('connecting');
 
     try {
       // Connect to Binance public 24hr ticker stream for multiple symbols
@@ -65,6 +81,7 @@ class BinanceWebSocketClient {
         console.log('[Binance WS] Connected successfully');
         this.reconnectAttempts = 0; // Reset on successful connection
         this.wsFailed = false;
+        this.setStatus('connected');
         
         // Stop polling if WS reconnected
         if (this.isPolling) {
@@ -169,6 +186,8 @@ class BinanceWebSocketClient {
   private async startPolling() {
     if (this.isPolling) return;
     this.isPolling = true;
+    // WebSocket is down — we're serving 10s REST snapshots instead.
+    this.setStatus('polling');
     
     await this.fetchPricesFromRestApi();
     
@@ -198,11 +217,14 @@ class BinanceWebSocketClient {
       }
       
       const data = await response.json();
+      // New response shape: { prices: {...}, meta: {...} } (tolerate the old flat map)
+      const pricesMap: Record<string, CryptoPrice> = data?.prices ?? data;
       
-      // Merge with existing prices
-      Object.keys(data).forEach(symbol => {
-        if (data[symbol]) {
-          this.prices[symbol] = data[symbol];
+      // Merge with existing prices (lastUpdate comes from the provider fetch
+      // time inside the route — not re-stamped here)
+      Object.keys(pricesMap).forEach(symbol => {
+        if (pricesMap[symbol] && typeof pricesMap[symbol] === 'object') {
+          this.prices[symbol] = pricesMap[symbol];
         }
       });
       
@@ -227,6 +249,7 @@ class BinanceWebSocketClient {
   disconnect() {
     if (this.reconnectTimer) {
       clearTimeout(this.reconnectTimer);
+      this.reconnectTimer = null;
     }
     this.stopPolling();
     if (this.ws) {
@@ -234,6 +257,39 @@ class BinanceWebSocketClient {
       this.ws = null;
     }
     this.callbacks.clear();
+    this.setStatus('disconnected');
+    this.statusCallbacks.clear();
+  }
+
+  /** Current connection status (WS connected / REST fallback / idle). */
+  getStatus(): BinanceConnectionStatus {
+    return this.status;
+  }
+
+  /** Subscribe to status changes; the callback fires immediately with the
+   *  current status. Returns an unsubscribe function. */
+  onStatus(callback: StatusCallback): () => void {
+    this.statusCallbacks.add(callback);
+    try {
+      callback(this.status);
+    } catch (error) {
+      console.error('[Binance WS] Status callback error:', error);
+    }
+    return () => {
+      this.statusCallbacks.delete(callback);
+    };
+  }
+
+  private setStatus(status: BinanceConnectionStatus) {
+    if (this.status === status) return;
+    this.status = status;
+    this.statusCallbacks.forEach((cb) => {
+      try {
+        cb(status);
+      } catch (error) {
+        console.error('[Binance WS] Status callback error:', error);
+      }
+    });
   }
 
   getCurrentPrices(): Record<string, CryptoPrice> {

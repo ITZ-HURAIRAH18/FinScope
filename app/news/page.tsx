@@ -92,6 +92,18 @@ function NewsContent() {
           </CardContent>
         </Card>
 
+        {/* H8 honesty note: these tabs are a keyword filter over Finnhub's
+            general feed — the provider offers no dedicated crypto/stock news
+            category. Label it so users aren't misled. */}
+        {activeCategory !== "general" && (
+          <p className="text-xs text-muted-foreground mb-4">
+            {activeCategory === "crypto" ? "Crypto" : "Stock"} tab shows a{" "}
+            <span className="text-foreground">keyword-filtered</span> view of the
+            general market feed (our news provider offers no dedicated{" "}
+            {activeCategory} category).
+          </p>
+        )}
+
         {/* News Grid */}
         {loading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">

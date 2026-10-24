@@ -1,10 +1,12 @@
 "use client";
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Header from '@/components/Header';
 import { useAppSelector } from '@/store/hooks';
+import { useMarketStream } from '@/hooks/useMarketStream';
+import { usePriceSnapshot } from '@/hooks/usePriceSnapshot';
 import { formatCurrency, formatPercentage, getPriceChangeColor } from '@/lib/utils';
 import LoadingScreen from '@/components/LoadingScreen';
 import { Card, CardContent, CardHeader, CardTitle, Button, Badge } from '@/components/ui';
@@ -22,7 +24,14 @@ export default function WatchlistPage() {
   const router = useRouter();
   const [watchlist, setWatchlist] = useState<WatchlistItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
+  const [removeError, setRemoveError] = useState('');
   const { cryptoPrices, stockPrices } = useAppSelector((state) => state.market);
+
+  // S4: this page previously never opened a data stream — every price cell was
+  // stuck on "Loading…" on direct navigation.
+  useMarketStream();
+  const fetchSnapshot = usePriceSnapshot();
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -30,32 +39,65 @@ export default function WatchlistPage() {
     }
   }, [status, router]);
 
+  const loadSnapshotFor = useCallback(
+    (items: WatchlistItem[]) => {
+      fetchSnapshot({
+        crypto: items.filter((i) => i.type === 'CRYPTO').map((i) => i.symbol),
+        stocks: items.filter((i) => i.type === 'STOCK').map((i) => i.symbol),
+      });
+    },
+    [fetchSnapshot]
+  );
+
   useEffect(() => {
     if (session?.user) {
       fetchWatchlist();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [session]);
 
   const fetchWatchlist = async () => {
+    setIsLoading(true);
+    setLoadError('');
     try {
       const response = await fetch('/api/watchlist');
+      if (!response.ok) {
+        // S4: failures used to fall through to the "empty watchlist" state,
+        // telling users the opposite of the truth.
+        const data = await response.json().catch(() => ({}));
+        setLoadError(data.error || 'Failed to load your watchlist');
+        return;
+      }
       const data = await response.json();
-      setWatchlist(data.watchlist || []);
+      const items: WatchlistItem[] = data.watchlist || [];
+      setWatchlist(items);
+      loadSnapshotFor(items);
     } catch (error) {
       console.error('Failed to fetch watchlist:', error);
+      setLoadError('Network error — check your connection and retry');
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleRemove = async (symbol: string, type: string) => {
+    setRemoveError('');
+    const previous = watchlist;
+    setWatchlist((prev) => prev.filter((item) => !(item.symbol === symbol && item.type === type)));
     try {
-      await fetch(`/api/watchlist?symbol=${symbol}&type=${type}`, {
-        method: 'DELETE',
-      });
-      setWatchlist((prev) => prev.filter((item) => !(item.symbol === symbol && item.type === type)));
+      const response = await fetch(
+        `/api/watchlist?symbol=${encodeURIComponent(symbol)}&type=${type}`,
+        { method: 'DELETE' }
+      );
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        setWatchlist(previous); // rollback — the API rejected the removal
+        setRemoveError(data.error || 'Failed to remove from watchlist');
+      }
     } catch (error) {
       console.error('Failed to remove from watchlist:', error);
+      setWatchlist(previous); // rollback
+      setRemoveError('Network error — removal undone');
     }
   };
 
@@ -91,7 +133,22 @@ export default function WatchlistPage() {
           </div>
         </div>
 
-        {watchlist.length === 0 ? (
+        {removeError && (
+          <div className="mb-4 p-3 bg-error-muted border border-error/20 rounded-md text-xs text-error">
+            {removeError}
+          </div>
+        )}
+
+        {loadError ? (
+          <Card className="rounded-lg">
+            <CardContent className="py-16 text-center">
+              <p className="text-sm text-error mb-4">{loadError}</p>
+              <Button variant="primary" size="sm" onClick={fetchWatchlist}>
+                Retry
+              </Button>
+            </CardContent>
+          </Card>
+        ) : watchlist.length === 0 ? (
           <Card className="rounded-lg">
             <CardContent className="py-16 text-center">
               <svg className="w-12 h-12 mx-auto mb-4 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>

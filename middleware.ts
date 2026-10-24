@@ -19,7 +19,10 @@ export default withAuth(
   }
 );
 
-// Protect these routes - require authentication
+// Route protection is enforced inside each API handler (getServerSession →
+// proper 401 JSON). Middleware only guards page routes: previously /api/*
+// entries here caused unauthenticated API calls to return HTTP 200 with the
+// login page HTML instead of 401 (audit finding C4).
 export const config = {
   matcher: [
     '/dashboard/:path*',
@@ -27,8 +30,5 @@ export const config = {
     '/watchlist/:path*',
     '/portfolio/:path*',
     '/profile/:path*',
-    '/api/watchlist/:path*',
-    '/api/profile/:path*',
-    '/api/portfolio/:path*',
   ],
 };

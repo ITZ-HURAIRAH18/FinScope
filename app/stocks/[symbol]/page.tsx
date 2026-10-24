@@ -3,9 +3,8 @@
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Header from '@/components/Header';
-import { useAppSelector, useAppDispatch } from '@/store/hooks';
-import { updateStockPrices } from '@/store/slices/marketSlice';
-import { getFinnhubWS } from '@/lib/finnhub-websocket';
+import { useAppSelector } from '@/store/hooks';
+import { useMarketStream } from '@/hooks/useMarketStream';
 import { formatCurrency, formatPercentage, getPriceChangeColor } from '@/lib/utils';
 import WatchlistButton from '@/components/watchlist/WatchlistButton';
 import StockChart from '@/components/stock/StockChart';
@@ -16,7 +15,6 @@ import { Card, CardContent, CardHeader, CardTitle, Badge, Button } from '@/compo
 export default function StockDetailPage() {
   const params = useParams();
   const router = useRouter();
-  const dispatch = useAppDispatch();
 
   const rawSymbol = params.symbol as string;
   const symbol = decodeURIComponent(rawSymbol).toUpperCase();
@@ -26,51 +24,28 @@ export default function StockDetailPage() {
   const [isDataLoaded, setIsDataLoaded] = useState(false);
   const [hasError, setHasError] = useState(false);
 
+  // Streams are shared singletons; this page no longer opens/closes the
+  // Finnhub socket itself (audit S4: unmounting here used to kill the
+  // subscription every other page relied on).
+  useMarketStream({ crypto: false });
+
+  // Watch the store for this symbol's data instead of the raw subscription.
   useEffect(() => {
-    // Set a timeout to detect if data loading is stuck
+    if (stockPrices[symbol]) {
+      setIsDataLoaded(true);
+      setHasError(false);
+    }
+  }, [stockPrices, symbol]);
+
+  // Surface a delayed-data warning if the symbol hasn't arrived yet.
+  useEffect(() => {
+    if (isDataLoaded) return;
     const timeoutTimer = setTimeout(() => {
-      if (!isDataLoaded) {
-        console.warn(`[Stock Detail] Data load timeout for ${symbol} - showing fallback`);
-        setHasError(true);
-      }
-    }, 15000); // 15 second timeout
-
-    // Initialize Finnhub WebSocket with async token fetch
-    const initFinnhub = async () => {
-      try {
-        const finnhubAPIKey = process.env.NEXT_PUBLIC_FINNHUB_API_KEY || "";
-        const finnhubWS = await getFinnhubWS(finnhubAPIKey);
-
-        finnhubWS.connect();
-        const unsubFinnhub = finnhubWS.subscribe((prices) => {
-          dispatch(updateStockPrices(prices));
-          if (prices[symbol]) {
-            setIsDataLoaded(true);
-            setHasError(false);
-          }
-        });
-
-        if (stockPrices[symbol]) {
-          setIsDataLoaded(true);
-          setHasError(false);
-        }
-
-        // Store cleanup function
-        (window as any).__stockFinnhubCleanup = unsubFinnhub;
-      } catch (error) {
-        console.error('[Stock Detail] Failed to initialize Finnhub:', error);
-        setHasError(true);
-      }
-    };
-    
-    initFinnhub();
-
-    return () => {
-      clearTimeout(timeoutTimer);
-      const cleanup = (window as any).__stockFinnhubCleanup;
-      if (cleanup) cleanup();
-    };
-  }, [dispatch, symbol]);
+      console.warn(`[Stock Detail] Data load timeout for ${symbol} - showing fallback`);
+      setHasError(true);
+    }, 15000);
+    return () => clearTimeout(timeoutTimer);
+  }, [isDataLoaded, symbol]);
 
   const currentPriceData = priceData || {
     symbol: symbol,
