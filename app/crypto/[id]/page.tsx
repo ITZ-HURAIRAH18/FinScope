@@ -13,6 +13,8 @@ import LoadingScreen from '@/components/LoadingScreen';
 import TradingPanel from '@/components/trading/TradingPanel';
 import CryptoIcon from '@/components/crypto/CryptoIcon';
 import TechnicalInsights from '@/components/markets/TechnicalInsights';
+import PredictionCard from '@/components/markets/PredictionCard';
+import TradingAgent from '@/components/agent/TradingAgent';
 import { Card, CardContent, CardHeader, CardTitle, Badge, Button } from '@/components/ui';
 
 export default function CryptoDetailPage() {
@@ -221,6 +223,16 @@ export default function CryptoDetailPage() {
               </div>
             </CardContent>
           </Card>
+        </div>
+
+        {/* AI Prediction + Trading Assistant (Gemini, grounded in real data) */}
+        <div className="grid lg:grid-cols-3 gap-4 mb-6 animate-slide-up animate-delay-300">
+          <div className="lg:col-span-1">
+            <PredictionCard symbol={symbol} />
+          </div>
+          <div className="lg:col-span-2">
+            <TradingAgent symbol={symbol} />
+          </div>
         </div>
       </div>
     </main>

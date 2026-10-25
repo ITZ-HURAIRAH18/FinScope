@@ -8,6 +8,11 @@ import {
   vwap,
   last,
   pctChange,
+  atr,
+  adx,
+  stochRsi,
+  obv,
+  volumeSpike,
 } from './indicators';
 
 /**
@@ -214,5 +219,99 @@ describe('last / pctChange', () => {
     expect(pctChange([100, 90])).toBeCloseTo(-10, 10);
     expect(pctChange([100])).toBeNull();
     expect(pctChange([0, 5])).toBeNull(); // zero previous → undefined %
+  });
+});
+
+/* -------------------------------------------------------------------------- */
+/* Signal-engine indicators (ATR / ADX / StochRSI / OBV / volume spike)        */
+/* -------------------------------------------------------------------------- */
+
+/** Candle arrays where close_i = start + i, high = close+2, low = close-2. */
+function rampCandles(n: number, start = 100) {
+  const closes = Array.from({ length: n }, (_, i) => start + i);
+  return { closes, highs: closes.map((c) => c + 2), lows: closes.map((c) => c - 2) };
+}
+
+describe('atr', () => {
+  it('constant true range → ATR equals that range after warm-up', () => {
+    // h-l = 4 dominates every TR (h-pc = 3, |l-pc| = 1) → TR is constant 4.
+    const { highs, lows, closes } = rampCandles(40);
+    const values = atr(highs, lows, closes, 14);
+    expect(values.slice(0, 14).every((v) => v === null)).toBe(true); // warm-up
+    expect(values[14]).toBeCloseTo(4, 10); // SMA seed
+    expect(values[39]).toBeCloseTo(4, 10); // Wilder smoothing keeps it
+  });
+
+  it('returns all nulls when the series is too short', () => {
+    const { highs, lows, closes } = rampCandles(10);
+    expect(atr(highs, lows, closes, 14).every((v) => v === null)).toBe(true);
+  });
+});
+
+describe('adx', () => {
+  it('steadily rising series → +DI dominates, −DI stays 0, ADX in 0–100', () => {
+    const n = 60;
+    const highs = Array.from({ length: n }, (_, i) => 100 + i);
+    const lows = Array.from({ length: n }, (_, i) => 90 + i);
+    const closes = Array.from({ length: n }, (_, i) => 95 + i);
+    const { adx: adxSeries, plusDi, minusDi } = adx(highs, lows, closes, 14);
+
+    expect(plusDi[59]).not.toBeNull();
+    expect(plusDi[59]!).toBeGreaterThan(0);
+    expect(minusDi[59]).toBe(0); // no down-movement exists in this series
+    expect(plusDi[59]!).toBeGreaterThan(minusDi[59]!);
+    expect(adxSeries[59]).not.toBeNull();
+    expect(adxSeries[59]!).toBeGreaterThanOrEqual(0);
+    expect(adxSeries[59]!).toBeLessThanOrEqual(100);
+    // Warm-up: nothing before the first DI window.
+    expect(adxSeries[10]).toBeNull();
+  });
+});
+
+describe('stochRsi', () => {
+  it('stays within 0–100 and warms up with nulls', () => {
+    const closes = Array.from({ length: 80 }, (_, i) => 100 + (i % 17) * 0.5 - (i % 5) * 0.3);
+    const { stoch, k, d } = stochRsi(closes, 14, 14, 3, 3);
+    expect(stoch.slice(0, 30).some((v) => v === null)).toBe(true);
+    for (let i = 30; i < closes.length; i++) {
+      expect(stoch[i]).toBeGreaterThanOrEqual(0);
+      expect(stoch[i]).toBeLessThanOrEqual(100);
+      if (k[i] !== null) {
+        expect(k[i]!).toBeGreaterThanOrEqual(0);
+        expect(k[i]!).toBeLessThanOrEqual(100);
+      }
+      if (d[i] !== null) {
+        expect(d[i]!).toBeGreaterThanOrEqual(0);
+        expect(d[i]!).toBeLessThanOrEqual(100);
+      }
+    }
+  });
+
+  it('flat (always-winner) RSI window is the documented 50 midpoint', () => {
+    const closes = Array.from({ length: 60 }, (_, i) => 100 + i); // RSI = 100 flat
+    const { stoch, k } = stochRsi(closes, 14, 14, 3, 3);
+    expect(stoch[59]).toBe(50); // min == max convention → neutral 50
+    expect(k[59]).toBe(50);
+  });
+});
+
+describe('obv', () => {
+  it('adds volume on up-closes, subtracts on down-closes, ignores dojis', () => {
+    const values = obv([100, 101, 100, 100, 99], [10, 20, 30, 40, 50]);
+    expect(values).toEqual([0, 20, -10, -10, -60]);
+  });
+});
+
+describe('volumeSpike', () => {
+  it('z-scores the current bar against the prior window', () => {
+    const baseline = Array.from({ length: 20 }, (_, i) => (i % 2 === 0 ? 90 : 110)); // μ=100 σ=10
+    const values = volumeSpike([...baseline, 1000], 20);
+    expect(values.slice(0, 20).every((v) => v === null)).toBe(true);
+    expect(values[20]).toBeCloseTo((1000 - 100) / 10, 6); // z = 90 → spike
+  });
+
+  it('stays null on a flat baseline (zero variance)', () => {
+    const values = volumeSpike([...Array(20).fill(100), 100], 20);
+    expect(values[20]).toBeNull();
   });
 });

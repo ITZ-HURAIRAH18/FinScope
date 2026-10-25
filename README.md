@@ -22,10 +22,13 @@ Built with **Next.js 15**, **TypeScript**, **Redux Toolkit**, **Prisma**, and **
 - **Live Portfolio Updates** - Real-time portfolio value calculations
 
 ### 📈 Analytics & Insights
-- **Interactive Charts** - TradingView-style charts with multiple timeframes (1D, 1W, 1M, 3M, 1Y)
+- **Interactive Charts** - TradingView-style charts with every candle range (1D → MAX, 1m→1w intervals) from Binance with CoinGecko fallback and honest data provenance
 - **Market Analytics** - Top gainers, losers, and trending assets
 - **Fear & Greed Index** - Real crypto sentiment gauge (alternative.me), 30-day trend, clearly labeled as provider data
 - **Technical Insights** - RSI-14, SMA-20, MACD (12/26/9) and Bollinger Bands computed from real OHLC candles, with documented methodology
+- **Signal Engine (deterministic)** - Multi-timeframe analysis (15m/1h/4h/1d real Binance candles): ATR/ADX/StochRSI/OBV/volume-spike, market structure (swing pivots, HH/HL/LH/LL, support/resistance, break of structure), regime detection, 5-group weighted confluence score with strict gates, and a full trade plan (entry zone, structure+ATR stop, TP1-3 with R:R, duration, invalidation) — **all computed in code, unit-tested, no AI** — served at `GET /api/signal`
+- **AI Prediction (Gemini)** - Per-coin LONG/SHORT/NEUTRAL that *explains the engine's* computed result: confidence, easy Roman Urdu/English reasoning, risks — plus the deterministic trade plan and confluence bars rendered alongside; explicitly probabilistic, never a profit promise (falls back to engine-only analysis if the AI is unavailable)
+- **AI Trading Assistant (Trading Guru)** - Ask any coin question in Roman Urdu **or** English; you get a structured answer (TREND → SETUP → VERDICT → ENTRY → STOP LOSS → TAKE PROFIT → DURATION → RISK) built only from the engine's real numbers, formatted with bold sections and bullets, with a permanent "not financial advice" disclaimer
 - **News Feed** - Latest financial news; Crypto/Stock tabs are explicitly keyword-filtered views of the provider's general feed
 - **Watchlists** - Save and track favorite assets across crypto and stocks
 
@@ -169,9 +172,22 @@ Built with **Next.js 15**, **TypeScript**, **Redux Toolkit**, **Prisma**, and **
 │   ├── prisma.ts         # Prisma client
 │   ├── email.ts          # Email service (OTP sending)
 │   ├── binance-websocket.ts  # Binance WS client
+│   ├── binance-rest.ts   # Shared Binance klines REST client (charts + signal engine)
 │   ├── finnhub-websocket.ts  # Finnhub WS client
+│   ├── coingecko.ts      # CoinGecko client (fallback + coin mapping)
+│   ├── indicators.ts     # Tested indicator math (SMA/EMA/RSI/MACD/BB/VWAP/ATR/ADX/…)
+│   ├── signal/           # Deterministic signal engine
+│   │   ├── engine.ts     # Multi-TF orchestration + regime/patterns
+│   │   ├── structure.ts  # Swing pivots, HH/HL, S/R, break of structure
+│   │   ├── levels.ts     # Trade plan: entry/SL/TP1-3, R:R, invalidation
+│   │   ├── scoring.ts    # Weighted confluence score + NO-TRADE gates
+│   │   └── types.ts      # Engine contracts
+│   ├── market-agent.ts   # Trading Guru prompts + engine/LLM glue
+│   ├── gemini.ts         # Gemini REST client (server-side key)
 │   ├── cloudinary.ts     # Cloudinary config
 │   └── utils.ts          # Helper functions
+│
+├── scripts/              # Live smoke tests (smoke-auth / smoke-reset / smoke-agent)
 │
 ├── prisma/
 │   └── schema.prisma     # Database schema
@@ -318,6 +334,39 @@ Built with **Next.js 15**, **TypeScript**, **Redux Toolkit**, **Prisma**, and **
 - No registration needed
 - Completely free
 
+### Gemini (AI Predictions & Trading Assistant) - **Required for AI panels**
+1. Get a free key from [Google AI Studio](https://aistudio.google.com/apikey)
+2. Add to `.env`:
+   ```env
+   GEMINI_API_KEY="your_key_here"
+   ```
+3. Powers the **AI Prediction** card and **Trading Guru** chat on every
+   crypto detail page (`gemini-2.5-flash`, called server-side only — the key
+   never reaches the browser). The **signal engine** itself (`GET /api/signal`,
+   and the deterministic plan/confluence shown on the card) needs **no Gemini
+   key** — only a signed-in session.
+
+**Honesty rules built into the feature:**
+- The signal is computed **deterministically in code** (`lib/signal/*`:
+  multi-timeframe indicators → market structure → weighted confluence score →
+  trade plan); Gemini only explains that JSON and is forbidden from inventing
+  or changing any number — it cannot override an engine NO-TRADE.
+- Predictions are probabilistic: engine direction drives the bias, confidence
+  is capped at the engine's evidence score, no profit promises, always a
+  "not financial advice" reminder — in easy Roman Urdu for Roman Urdu inputs
+  and English for English inputs.
+- The card shows the deterministic trade plan (entry/SL/TP1-3/R:R),
+  confluence bars, a position-size calculator, the data provider, candle
+  count, fetch time, and the honest "weights not yet backtested" note next to
+  the AI text, plus a visible disclaimer.
+- If Gemini fails (quota/config/format), the card still renders the live
+  deterministic analysis as **engine-only** with an explicit notice instead of
+  an error.
+- Rate limits: 10 predictions and 12 chat messages per signed-in user per
+  minute (each Gemini call costs quota); signal requests are capped at
+  20/min. Without the key the AI panels show a clear "not configured"
+  message; the rest of the app is unaffected.
+
 ### Cloudinary (Profile Images) - **Optional**
 1. Sign up at [cloudinary.com](https://cloudinary.com/)
 2. Get credentials from dashboard
@@ -390,6 +439,8 @@ Built with **Next.js 15**, **TypeScript**, **Redux Toolkit**, **Prisma**, and **
 - **Live crypto charts** with price history
 - **Market data** - 24h high/low, volume, market cap
 - **Price statistics** - Real-time price updates
+- **Signal + AI Prediction** - Deterministic trade plan (entry/SL/TP1-3, R:R, invalidation) + confluence score + position-size calculator from the signal engine, with Gemini's honest LONG/SHORT/NEUTRAL explanation on top (auto-refreshes every 90s)
+- **Trading Guru (chat)** - Ask the coin anything in Roman Urdu or English; structured, formatted analysis grounded in the engine's real numbers
 - **Watchlist integration**
 
 ### 💼 Portfolio Page (`/portfolio`)
@@ -517,6 +568,9 @@ npm run test:watch
 node scripts/smoke-auth.mjs
 node scripts/smoke-reset.mjs
 
+# AI prediction + assistant smoke test (requires dev server + GEMINI_API_KEY)
+node scripts/smoke-agent.mjs
+
 # Generate Prisma Client after schema changes
 npx prisma generate
 
@@ -542,6 +596,7 @@ npx prisma studio
 | `npm run test:watch` | Run unit tests in watch mode |
 | `node scripts/smoke-auth.mjs` | Auth API regression smoke test (dev server required) |
 | `node scripts/smoke-reset.mjs` | Password-reset flow smoke test (dev server required) |
+| `node scripts/smoke-agent.mjs` | Signal engine + AI prediction/chat live smoke test (dev server + `GEMINI_API_KEY` required) |
 | `npx prisma generate` | Generate Prisma Client |
 | `npx prisma db push` | Sync Prisma schema with database |
 | `npx prisma studio` | Open database GUI |
@@ -562,6 +617,11 @@ NEXTAUTH_URL="http://localhost:3000"
 # API Keys (Required)
 # Server-side only — never exposed to the browser bundle.
 FINNHUB_API_KEY="..."
+
+# Gemini AI (Required for the AI Prediction card + Trading Assistant; optional
+# for everything else — panels show "not configured" without it).
+# Get a key at https://aistudio.google.com/apikey — server-side only.
+GEMINI_API_KEY="..."
 
 # Cron protection (Required in production)
 # Verifies the cleanup endpoint's Authorization: Bearer header.
@@ -849,6 +909,7 @@ If you find this project helpful, please consider:
 ## 📚 Documentation
 
 - **[docs/AUDIT-REPORT.md](docs/AUDIT-REPORT.md)** — full professional audit: architecture, every finding (C/H/M/L/S IDs), data-provider verification, implemented-fix log with verification evidence, and the roadmap.
+- **[docs/SIGNAL-AGENT-PLAN.md](docs/SIGNAL-AGENT-PLAN.md)** — the signal-agent architecture: spec→stack adaptation decisions, folder structure, phase plan (what's built now vs. derivatives/backtesting/scanner phases still to come), and honest limitations.
 - **This README** — setup, configuration, deployment, and usage guides.
 
 > The previous `QUICK_SETUP.md`, `EMAIL_VERIFICATION_SETUP.md`,
